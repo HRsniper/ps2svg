@@ -1,0 +1,23 @@
+<svg width="70" height="149" viewBox="0 0 70 149" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="tree" transform="translate(0 149)">
+<text fill="#000000" font-size="11" x="9.8" y="-71.1">-</text>
+<text fill="#000000" font-size="11" x="1.0" y="-38.0">a</text>
+<text fill="#000000" font-size="11" x="22.7" y="-71.1">expr</text>
+<text fill="#000000" font-size="11" x="11.0" y="-104.2">expr</text>
+<text fill="#000000" font-size="11" x="16.7" y="-38.0">[</text>
+<text fill="#000000" font-size="11" x="24.5" y="-137.3">stat</text>
+<text fill="#000000" font-size="11" x="63.8" y="-38.0">]</text>
+<text fill="#000000" font-size="11" x="40.8" y="-5.0">i</text>
+<text fill="#000000" font-size="11" x="30.0" y="-38.0">expr</text>
+<text fill="#000000" font-size="11" x="44.8" y="-104.2">;</text>
+<path stroke="#000000" d="M35.1,-132.3 L23.4,-115.3"/>
+<path stroke="#000000" d="M23.4,-99.2 L11.7,-82.2" />
+<path stroke="#000000" d="M23.4,-99.2 L35.1,-82.2" />
+<path stroke="#000000" d="M35.1,-66.1 L4.3,-49.1" />
+<path stroke="#000000" d="M35.1,-66.1 L18.8,-49.1" />
+<path stroke="#000000" d="M35.1,-66.1 L42.2,-49.1" />
+<path stroke="#000000" d="M42.2,-33.0 L42.2,-16.0" />
+<path stroke="#000000" d="M35.1,-66.1 L65.9,-49.1" />
+<path stroke="#000000" d="M35.1,-132.3 L46.7,-115.3" />
+</g>
+</svg>

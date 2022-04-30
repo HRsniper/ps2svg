@@ -1,0 +1,27 @@
+{
+  "name": "ps2svg",
+  "version": "1.0.0",
+  "description": "Convert PostScript to SVG",
+  "main": "ps2svg.js",
+  "scripts": {
+    "start": "node ps2svg.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HRsniper/ps2svg.git"
+  },
+  "keywords": [
+    "ps",
+    "svg",
+    "convert",
+    "converter",
+    "pstosvg",
+    "ps2svg"
+  ],
+  "author": "@HRsniper",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/HRsniper/ps2svg/issues"
+  },
+  "homepage": "https://github.com/HRsniper/ps2svg#readme"
+}

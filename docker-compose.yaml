@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  node:
+    container_name: node
+    image: node:18.0.0-alpine3.15
+    tty: true
+    working_dir: /home/node/src
+    volumes:
+      - .:/home/node/src
+w
