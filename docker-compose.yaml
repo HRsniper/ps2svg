@@ -8,4 +8,3 @@ services:
     working_dir: /home/node/src
     volumes:
       - .:/home/node/src
-w
