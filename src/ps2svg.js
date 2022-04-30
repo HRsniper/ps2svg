@@ -86,6 +86,7 @@ fs.readFile(`${inputName}.ps`, "utf8", (err, data) => {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto');
 </style>
+<rect id="bg" width="${boundingBoxWidth}" height="${boundingBoxHeight}" fill="#ffffff"/>
 <g id="tree" transform="translate(0 ${boundingBoxHeight})" font-family="Roboto">
 ${tagPath.join("\n")}
 ${tagText.join("\n")}

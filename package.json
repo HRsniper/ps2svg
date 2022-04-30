@@ -1,6 +1,6 @@
 {
   "name": "ps2svg",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Convert PostScript to SVG",
   "main": "./src/ps2svg.js",
   "type": "module",
