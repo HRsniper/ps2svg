@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import process from "node:process";
 
-const ARGS = process.argv.slice(2);
+const argv = process.argv.slice(2);
 // console.log("argv", argv);
-function cli(argv = ARGS) {
+function cli(argv: string[]) {
   if (argv.length < 1 || argv.length > 2) {
     console.log(`Usage:
     ps2svg myps        => myps.svg
@@ -38,7 +38,7 @@ function cli(argv = ARGS) {
   return { inputName, outputName };
 }
 
-const { inputName, outputName } = cli();
+const { inputName, outputName } = cli(argv);
 
 const file = fs.readFileSync(`${inputName}.ps`, "utf-8");
 
@@ -71,30 +71,26 @@ function getMoveTo(file: string) {
   // console.log("moveToMatches", moveToMatches);
   const moveToCoordinates: string[][] = [];
   for (const moveTo of moveToMatches) {
-    const moveToCoordinate = moveTo.replace(" moveto", "").split(" "); // ["162.092", "297.792"]
+    const moveToCoordinate = moveTo.replace(" moveto", "").trim().split(" "); // ["162.092", "297.792"]
     moveToCoordinates.push(moveToCoordinate); // [["162.092", "297.792"]]
   }
-  console.log(moveToCoordinates);
-
   return { moveToMatches, moveToCoordinates };
-  // const move = lineCoordinates[i][0].replace("moveto", "").trim().split(" ");
 }
-const { moveToMatches, moveToCoordinates } = getMoveTo(file);
+const { moveToCoordinates } = getMoveTo(file);
 
+/* OK */
 function getLineTo(file: string) {
   const lineToRegex = /([0-9]+\.[0-9]+ [0-9]+\.[0-9]+ lineto)/gm;
-  const lineToMatches = file.match(lineToRegex) as string[];
+  const lineToMatches = file.match(lineToRegex) as string[]; // ["58.850 280.792 lineto"]
   // console.log("lineToMatches", lineToMatches);
   const lineToCoordinates: string[][] = [];
   for (const lineTo of lineToMatches) {
-    const lineToCoordinate = lineTo.replace(" lineto", "").split(" ");
-    lineToCoordinates.push(lineToCoordinate);
+    const lineToCoordinate = lineTo.replace(" lineto", "").trim().split(" "); // ["58.850", "280.792"]
+    lineToCoordinates.push(lineToCoordinate); // [["58.850", "280.792"]]
   }
-  console.log(lineToMatches);
-
-  return { lineToMatches };
+  return { lineToMatches, lineToCoordinates };
 }
-const { lineToMatches } = getLineTo(file);
+const { lineToCoordinates } = getLineTo(file);
 
 /* OK */
 function getIdentifierTexts(file: string) {
@@ -111,52 +107,75 @@ function getIdentifierTexts(file: string) {
 }
 const { identifierTexts } = getIdentifierTexts(file);
 
-function getIdentifierCoordinates(file: string) {
-  // for (let i = 0; i < moveToMatches.length; i++) {
-  //   if (lineCoordinates[i][1] === undefined) {
-  //     const txt = lineCoordinates[i][0].replace("moveto", "").trim().split(" ");
-  //     identifierCoordinates.push([txt[0], txt[1]]);
-  //   }
-  // }
+/* OK */
+function getLineCoordinates(moveToCoordinates: string[][], lineToCoordinates: string[][]) {
+  // console.log("moveToCoordinates", moveToCoordinates[0]);
+  // console.log("lineToCoordinates", lineToCoordinates[0]);
+  const lineCoordinates: string[][][] = [];
+  for (const i in moveToCoordinates) {
+    lineCoordinates.push([moveToCoordinates[i], lineToCoordinates[i]]);
+  }
+  // console.log("lineCoordinates", lineCoordinates);
+  return { lineCoordinates };
 }
+const { lineCoordinates } = getLineCoordinates(moveToCoordinates, lineToCoordinates);
 
-fs.readFile(`test.ps`, "utf8", (err, data) => {
-  // if (err) throw err;
-
-  // const showRegex = /\([\x{0020}-\x{007f}]+\) show/gm;
-
-  const lineCoordinates = [];
-
-  const identifierCoordinates = [];
-
-  const tagPath = [];
-
-  for (let i = 0; i < moveToMatches.length; i++) {
-    lineCoordinates.push([moveToMatches[i], lineToMatches[i]]);
-  }
-
-  for (let i = 0; i < moveToMatches.length; i++) {
+function getIdentifierCoordinates(lineCoordinates: string[][][]) {
+  const identifierCoordinates: string[][] = [];
+  // console.log("lineCoordinates", lineCoordinates[0]);
+  // console.log("lineCoordinates", lineCoordinates[lineCoordinates.length - 1]);
+  for (const i in lineCoordinates) {
+    // console.log("m", lineCoordinates[i][0]);
+    // console.log("l", lineCoordinates[i][1]);
     if (lineCoordinates[i][1] === undefined) {
-      const txt = lineCoordinates[i][0].replace("moveto", "").trim().split(" ");
-      identifierCoordinates.push([txt[0], txt[1]]);
+      identifierCoordinates.push(lineCoordinates[i][0]);
     }
+    // console.log(identifierCoordinates);
   }
+  return { identifierCoordinates };
+}
+const { identifierCoordinates } = getIdentifierCoordinates(lineCoordinates);
 
-  // const tagText = [];
-  // for (let i = 0; i < showMatches.length; i++) {
-  //   tagText.push(
-  //     `<text fill="#000000" font-size="${fontSize}" x="${identifierCoordinates[i][0]}" y="-${identifierCoordinates[i][1]}">${identifierTexts[i]}</text>`
-  //   );
-  // }
+/* OK */
+function getTagText(identifierCoordinates: string[][], identifierTexts: string[]) {
+  const tagText: string[] = [];
+  for (const i in identifierCoordinates) {
+    tagText.push(
+      `<text fill="#000000" font-size="${fontSize}" x="${identifierCoordinates[i][0]}" y="-${identifierCoordinates[i][1]}">${identifierTexts[i]}</text>`
+    );
+  }
+  // console.log("tagText", tagText);
+  return { tagText };
+}
+const { tagText } = getTagText(identifierCoordinates, identifierTexts);
 
-  for (let i = 0; i < moveToMatches.length; i++) {
+/* OK */
+function getTagPath(lineCoordinates: string[][][]) {
+  // console.log("lineCoordinates", lineCoordinates[0]);
+  // console.log("lineCoordinates", lineCoordinates[lineCoordinates.length - 1]);
+  const tagPath: string[] = [];
+  for (const i in lineCoordinates) {
+    // console.log("m", lineCoordinates[i][0]);
+    // console.log("l", lineCoordinates[i][1]);
     if (lineCoordinates[i][1] !== undefined) {
-      const move = lineCoordinates[i][0].replace("moveto", "").trim().split(" ");
-      const line = lineCoordinates[i][1].replace("lineto", "").trim().split(" ");
+      const move = lineCoordinates[i][0];
+      const line = lineCoordinates[i][1];
       tagPath.push(`<path stroke="#000000" d="M${move[0]},-${move[1]} L${line[0]},-${line[1]}"/>`);
     }
   }
+  // console.log("tagPath", tagPath);
+  return { tagPath };
+}
+const { tagPath } = getTagPath(lineCoordinates);
 
+/* OK */
+function svgBuilder(
+  boundingBoxWidth: string,
+  boundingBoxHeight: string,
+  boundingBoxFull: string,
+  tagText: string[],
+  tagPath: string[]
+) {
   const SVG = `<svg width="${boundingBoxWidth}" height="${boundingBoxHeight}" viewBox="${boundingBoxFull}" fill="none" xmlns="http://www.w3.org/2000/svg">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto');
@@ -164,13 +183,15 @@ fs.readFile(`test.ps`, "utf8", (err, data) => {
 <rect id="bg" width="${boundingBoxWidth}" height="${boundingBoxHeight}" fill="#ffffff"/>
 <g id="tree" transform="translate(0 ${boundingBoxHeight})" font-family="Roboto">
 ${tagPath.join("\n")}
-$ {tagText.join("\n")}
+${tagText.join("\n")}
 </g>
 </svg>
 `;
+  return { SVG };
+}
+const { SVG } = svgBuilder(boundingBoxWidth, boundingBoxHeight, boundingBoxFull, tagText, tagPath);
 
-  fs.writeFile(`test.svg`, SVG, (err) => {
-    if (err) throw err;
-    console.log("💱 The file has been converted! 💱");
-  });
+fs.writeFile(`${outputName}.svg`, SVG, "utf-8", (err) => {
+  if (err) throw err;
+  console.log("💱 The file has been converted! 💱");
 });
