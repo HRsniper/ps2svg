@@ -1,0 +1,117 @@
+<svg width="563" height="314" viewBox="0 0 563 314" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto');
+</style>
+<rect id="bg" width="563" height="314" fill="#ffffff"/>
+<g id="tree" transform="translate(0 314)" font-family="Roboto">
+<path stroke="#000000" d="M162.092,-297.792 L58.850,-280.792"/>
+<path stroke="#000000" d="M58.850,-264.704 L13.287,-247.704"/>
+<path stroke="#000000" d="M13.287,-231.616 L13.287,-214.616"/>
+<path stroke="#000000" d="M58.850,-264.704 L38.067,-247.704"/>
+<path stroke="#000000" d="M58.850,-264.704 L55.168,-247.704"/>
+<path stroke="#000000" d="M58.850,-264.704 L81.169,-247.704"/>
+<path stroke="#000000" d="M81.169,-231.616 L81.169,-214.616"/>
+<path stroke="#000000" d="M58.850,-264.704 L104.414,-247.704"/>
+<path stroke="#000000" d="M162.092,-297.792 L265.333,-280.792"/>
+<path stroke="#000000" d="M265.333,-264.704 L127.554,-247.704"/>
+<path stroke="#000000" d="M127.554,-231.616 L127.554,-214.616"/>
+<path stroke="#000000" d="M265.333,-264.704 L159.330,-247.704"/>
+<path stroke="#000000" d="M265.333,-264.704 L180.963,-247.704"/>
+<path stroke="#000000" d="M265.333,-264.704 L241.652,-247.704"/>
+<path stroke="#000000" d="M241.652,-231.616 L241.652,-214.616"/>
+<path stroke="#000000" d="M241.652,-198.528 L229.381,-181.528"/>
+<path stroke="#000000" d="M229.381,-165.440 L229.381,-148.440"/>
+<path stroke="#000000" d="M241.652,-198.528 L253.924,-181.528"/>
+<path stroke="#000000" d="M265.333,-264.704 L339.855,-247.704"/>
+<path stroke="#000000" d="M265.333,-264.704 L403.112,-247.704"/>
+<path stroke="#000000" d="M403.112,-231.616 L308.961,-214.616"/>
+<path stroke="#000000" d="M403.112,-231.616 L332.008,-214.616"/>
+<path stroke="#000000" d="M332.008,-198.528 L269.645,-181.528"/>
+<path stroke="#000000" d="M332.008,-198.528 L294.501,-181.528"/>
+<path stroke="#000000" d="M294.501,-165.440 L263.892,-148.440"/>
+<path stroke="#000000" d="M263.892,-132.352 L263.891,-115.352"/>
+<path stroke="#000000" d="M294.501,-165.440 L294.501,-148.440"/>
+<path stroke="#000000" d="M294.501,-165.440 L325.111,-148.440"/>
+<path stroke="#000000" d="M325.111,-132.352 L325.111,-115.352"/>
+<path stroke="#000000" d="M332.008,-198.528 L345.357,-181.528"/>
+<path stroke="#000000" d="M332.008,-198.528 L394.371,-181.528"/>
+<path stroke="#000000" d="M394.371,-165.440 L363.536,-148.440"/>
+<path stroke="#000000" d="M394.371,-165.440 L401.961,-148.440"/>
+<path stroke="#000000" d="M401.961,-132.352 L401.961,-115.352"/>
+<path stroke="#000000" d="M394.371,-165.440 L425.206,-148.440"/>
+<path stroke="#000000" d="M403.112,-231.616 L474.216,-214.616"/>
+<path stroke="#000000" d="M474.216,-198.528 L443.381,-181.528"/>
+<path stroke="#000000" d="M474.216,-198.528 L481.806,-181.528"/>
+<path stroke="#000000" d="M481.806,-165.440 L448.451,-148.440"/>
+<path stroke="#000000" d="M448.451,-132.352 L448.450,-115.352"/>
+<path stroke="#000000" d="M481.806,-165.440 L481.806,-148.440"/>
+<path stroke="#000000" d="M481.806,-165.440 L515.162,-148.440"/>
+<path stroke="#000000" d="M515.162,-132.352 L471.195,-115.352"/>
+<path stroke="#000000" d="M515.162,-132.352 L492.829,-115.352"/>
+<path stroke="#000000" d="M515.162,-132.352 L525.979,-115.352"/>
+<path stroke="#000000" d="M525.979,-99.264 L525.979,-82.264"/>
+<path stroke="#000000" d="M525.979,-66.176 L502.602,-49.176"/>
+<path stroke="#000000" d="M502.602,-33.088 L502.602,-16.088"/>
+<path stroke="#000000" d="M525.979,-66.176 L525.979,-49.176"/>
+<path stroke="#000000" d="M525.979,-66.176 L549.356,-49.176"/>
+<path stroke="#000000" d="M549.356,-33.088 L549.356,-16.088"/>
+<path stroke="#000000" d="M515.162,-132.352 L559.130,-115.352"/>
+<path stroke="#000000" d="M474.216,-198.528 L505.051,-181.528"/>
+<path stroke="#000000" d="M403.112,-231.616 L497.263,-214.616"/>
+<text fill="#000000" font-size="11" x="479.056" y="-137.352">*</text>
+<text fill="#000000" font-size="11" x="426.348" y="-170.440">return</text>
+<text fill="#000000" font-size="11" x="305.463" y="-203.528">{</text>
+<text fill="#000000" font-size="11" x="222.209" y="-137.352">int</text>
+<text fill="#000000" font-size="11" x="312.719" y="-137.352">expr</text>
+<text fill="#000000" font-size="11" x="68.777" y="-236.616">expr</text>
+<text fill="#000000" font-size="11" x="536.965" y="-38.088">expr</text>
+<text fill="#000000" font-size="11" x="102.560" y="-236.616">;</text>
+<text fill="#000000" font-size="11" x="502.771" y="-137.352">expr</text>
+<text fill="#000000" font-size="11" x="115.267" y="-236.616">type</text>
+<text fill="#000000" font-size="11" x="469.415" y="-170.440">expr</text>
+<text fill="#000000" font-size="11" x="463.667" y="-203.528">stat</text>
+<text fill="#000000" font-size="11" x="460.707" y="-104.264">fact</text>
+<text fill="#000000" font-size="11" x="423.352" y="-137.352">;</text>
+<text fill="#000000" font-size="11" x="523.994" y="-38.088">-</text>
+<text fill="#000000" font-size="11" x="194.974" y="-203.528">formalParameter</text>
+<text fill="#000000" font-size="11" x="490.210" y="-38.088">expr</text>
+<text fill="#000000" font-size="11" x="503.198" y="-170.440">;</text>
+<text fill="#000000" font-size="11" x="250.668" y="-170.440">x</text>
+<text fill="#000000" font-size="11" x="153.715" y="-302.792">file</text>
+<text fill="#000000" font-size="11" x="398.463" y="-104.264">1</text>
+<text fill="#000000" font-size="11" x="503.974" y="-104.264">exprList</text>
+<text fill="#000000" font-size="11" x="6.115" y="-203.528">int</text>
+<text fill="#000000" font-size="11" x="120.382" y="-203.528">int</text>
+<text fill="#000000" font-size="11" x="388.515" y="-236.616">block</text>
+<text fill="#000000" font-size="11" x="321.613" y="-104.264">0</text>
+<text fill="#000000" font-size="11" x="490.684" y="-104.264">(</text>
+<text fill="#000000" font-size="11" x="230.688" y="-269.704">functionDecl</text>
+<text fill="#000000" font-size="11" x="285.283" y="-137.352">==</text>
+<text fill="#000000" font-size="11" x="34.574" y="-236.616">g</text>
+<text fill="#000000" font-size="11" x="436.059" y="-137.352">expr</text>
+<text fill="#000000" font-size="11" x="251.500" y="-137.352">expr</text>
+<text fill="#000000" font-size="11" x="499.346" y="-5.000">x</text>
+<text fill="#000000" font-size="11" x="37.791" y="-269.704">varDecl</text>
+<text fill="#000000" font-size="11" x="545.858" y="-5.000">1</text>
+<text fill="#000000" font-size="11" x="445.194" y="-104.264">x</text>
+<text fill="#000000" font-size="11" x="346.502" y="-137.352">return</text>
+<text fill="#000000" font-size="11" x="321.459" y="-203.528">stat</text>
+<text fill="#000000" font-size="11" x="192.108" y="-236.616">formalParameters</text>
+<text fill="#000000" font-size="11" x="77.671" y="-203.528">9</text>
+<text fill="#000000" font-size="11" x="389.569" y="-137.352">expr</text>
+<text fill="#000000" font-size="11" x="282.110" y="-170.440">expr</text>
+<text fill="#000000" font-size="11" x="383.822" y="-170.440">stat</text>
+<text fill="#000000" font-size="11" x="178.818" y="-236.616">(</text>
+<text fill="#000000" font-size="11" x="1.000" y="-236.616">type</text>
+<text fill="#000000" font-size="11" x="148.841" y="-236.616">fact</text>
+<text fill="#000000" font-size="11" x="266.180" y="-170.440">if</text>
+<text fill="#000000" font-size="11" x="260.636" y="-104.264">x</text>
+<text fill="#000000" font-size="11" x="332.845" y="-170.440">then</text>
+<text fill="#000000" font-size="11" x="513.588" y="-71.176">expr</text>
+<text fill="#000000" font-size="11" x="217.094" y="-170.440">type</text>
+<text fill="#000000" font-size="11" x="556.985" y="-104.264">)</text>
+<text fill="#000000" font-size="11" x="337.710" y="-236.616">)</text>
+<text fill="#000000" font-size="11" x="493.765" y="-203.528">}</text>
+<text fill="#000000" font-size="11" x="50.559" y="-236.616">=</text>
+</g>
+</svg>

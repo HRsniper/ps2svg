@@ -63,7 +63,7 @@ function getMoveTo(file) {
         const moveToCoordinate = moveTo.replace(" moveto", "").trim().split(" "); // ["162.092", "297.792"]
         moveToCoordinates.push(moveToCoordinate); // [["162.092", "297.792"]]
     }
-    return { moveToMatches, moveToCoordinates };
+    return { moveToCoordinates };
 }
 const { moveToCoordinates } = getMoveTo(file);
 /* OK */
@@ -76,7 +76,7 @@ function getLineTo(file) {
         const lineToCoordinate = lineTo.replace(" lineto", "").trim().split(" "); // ["58.850", "280.792"]
         lineToCoordinates.push(lineToCoordinate); // [["58.850", "280.792"]]
     }
-    return { lineToMatches, lineToCoordinates };
+    return { lineToCoordinates };
 }
 const { lineToCoordinates } = getLineTo(file);
 /* OK */
