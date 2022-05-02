@@ -15,7 +15,8 @@
     "url": "https://github.com/HRsniper/ps2svg/issues"
   },
   "scripts": {
-    "start": "node ./src/ps2svg.js"
+    "build": "npx tsc && node ./dist/ps2svg.js",
+    "start": "node ./dist/ps2svg.js"
   },
   "engines": {
     "node": ">=16.15.0"
@@ -30,5 +31,12 @@
     "converter",
     "pstosvg",
     "ps2svg"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^17.0.31",
+    "@typescript-eslint/eslint-plugin": "^5.21.0",
+    "@typescript-eslint/parser": "^5.21.0",
+    "eslint": "^8.14.0",
+    "typescript": "^4.6.4"
+  }
 }
