@@ -2,7 +2,6 @@ export function ryb2rgb([R, Y, B]: number[]) {
   const REGEX = /(\d+\.\d+)|(\.\d+)|(\d+)/gm;
   const WHITE_RGB = 255;
   const WHITE_RYB = 1.0;
-  const BLACK = 0;
   const R_ryb = Number(R.toString().match(REGEX));
   const Y_ryb = Number(Y.toString().match(REGEX));
   const B_ryb = Number(B.toString().match(REGEX));

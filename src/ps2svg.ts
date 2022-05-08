@@ -240,7 +240,7 @@ function svgBuilder(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto');
 </style>
-<rect id="bg" width="${boundingBoxWidth}" height="${boundingBoxHeight}" fill="#ffffff"/>
+<rect id="background" width="${boundingBoxWidth}" height="${boundingBoxHeight}" fill="#ffffff"/>
 <g id="tree" transform="translate(0 ${boundingBoxHeight})" font-family="Roboto">
 ${tagHighlight.join("\n")}
 ${tagPath.join("\n")}
