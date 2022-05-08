@@ -15,8 +15,11 @@
     "url": "https://github.com/HRsniper/ps2svg/issues"
   },
   "scripts": {
-    "build": "npx tsc && node ./src/ps2svg.js",
-    "start": "node ./src/ps2svg.js"
+    "build": "npx tsc",
+    "ryb2rgb": "npm run build && node ./src/ryb2rgb.js",
+    "ps2svg": "npm run build && node ./src/ps2svg.js",
+    "start": "node ./src/ps2svg.js",
+    "format": "npx prettier --write ."
   },
   "engines": {
     "node": ">=16.15.0"

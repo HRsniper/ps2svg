@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import process from "node:process";
+import { ryb2rgb } from "./ryb2rgb.js";
 const argv = process.argv.slice(2);
 // console.log("argv", argv);
 function cli(argv) {
@@ -53,6 +54,21 @@ function getHighlightDef(file) {
   return { highlight, highlightFull };
 }
 const { highlight, highlightFull } = getHighlightDef(file);
+function getHighlightColor(highlight, file) {
+  const highlightColor = [];
+  if (highlight) {
+    const highlightColorRegex = /[(\d+.\d+ )|(.\d+ )|(\d+ )]+setrgbcolor/gm;
+    const highlightColorMatches = file.match(highlightColorRegex); // [".95 .83 .82 setrgbcolor"]
+    // console.log("highlightColorMatches", highlightColorMatches);
+    const highlightColorFull = highlightColorMatches[0].replace(" setrgbcolor", "").trim().split(" "); // [".95", ".83", ".82"]
+    for (const i of highlightColorFull) {
+      highlightColor.push(Number(i)); // [.95, .83, .82]
+    }
+  }
+  const rgb = ryb2rgb(highlightColor);
+  return { rgb };
+}
+const { rgb } = getHighlightColor(highlight, file);
 /* OK */
 function getHighlightCoordinates(file, highlight, highlightFull) {
   const highlightCoordinatesRegex = /(\d+\.\d+ )+highlight/gm;
@@ -178,15 +194,16 @@ function getTagPath(lineCoordinates) {
 }
 const { tagPath } = getTagPath(lineCoordinates);
 /* OK */
-function getTagHighlight(highlightCoordinatesFull) {
+function getTagHighlight(highlightCoordinatesFull, RGBColor) {
   const tagHighlight = [];
   // const t = (Number(highlightCoordinatesFull[2]) - 14).toFixed(3);
+  // 0.95 0.82 0.83 setrgbcolor => #f2d4d1 / rgb(242, 212, 209)
   tagHighlight.push(`<g id="${highlightCoordinatesFull[4]}" transform="translate(0 -${highlightCoordinatesFull[3]})">
-<rect x="${highlightCoordinatesFull[0]}" y="-${highlightCoordinatesFull[1]}" width="${highlightCoordinatesFull[2]}" height="${highlightCoordinatesFull[3]}" fill="rgb(245, 210, 205)" />
+<rect x="${highlightCoordinatesFull[0]}" y="-${highlightCoordinatesFull[1]}" width="${highlightCoordinatesFull[2]}" height="${highlightCoordinatesFull[3]}" fill="rgb(${RGBColor[0]}, ${RGBColor[1]}, ${RGBColor[2]})" />
 </g>`);
   return { tagHighlight };
 }
-const { tagHighlight } = getTagHighlight(highlightCoordinatesFull);
+const { tagHighlight } = getTagHighlight(highlightCoordinatesFull, rgb);
 /* OK */
 function svgBuilder(boundingBoxWidth, boundingBoxHeight, boundingBoxFull, tagText, tagPath, tagHighlight) {
   const SVG = `<svg width="${boundingBoxWidth}" height="${boundingBoxHeight}" viewBox="${boundingBoxFull}" fill="none" xmlns="http://www.w3.org/2000/svg">
