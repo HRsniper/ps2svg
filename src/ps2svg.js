@@ -75,6 +75,7 @@ function getHighlightCoordinates(file, highlight, highlightFull) {
   const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex); // [ "59.784 66.176 76.525 16.088 highlight" ]
   if (highlightCoordinatesMatches === null) {
     console.log("No highlight coordinates found");
+    return { highlightCoordinatesFull: [] };
   }
   // console.log("highlightCoordinatesMatches", highlightCoordinatesMatches);
   const highlightCoordinatesFull = highlightCoordinatesMatches[0].split(" "); // ["59.784", "66.176", "76.525", "16.088", "highlight"]
@@ -196,6 +197,9 @@ const { tagPath } = getTagPath(lineCoordinates);
 /* OK */
 function getTagHighlight(highlightCoordinatesFull, RGBColor) {
   const tagHighlight = [];
+  if (highlightCoordinatesFull.length === 0) {
+    return { tagHighlight };
+  }
   // const t = (Number(highlightCoordinatesFull[2]) - 14).toFixed(3);
   // 0.95 0.82 0.83 setrgbcolor => #f2d4d1 / rgb(242, 212, 209)
   tagHighlight.push(`<g id="${highlightCoordinatesFull[4]}" transform="translate(0 -${highlightCoordinatesFull[3]})">
