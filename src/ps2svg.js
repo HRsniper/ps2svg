@@ -44,6 +44,33 @@ function getBoundingBox(file) {
 }
 const { boundingBoxFull, boundingBoxHeight, boundingBoxWidth } = getBoundingBox(file);
 /* OK */
+function getHighlightDef(file) {
+  const highlightRegex = /%% (\w )+(\w+)/gm;
+  const highlightMatches = file.match(highlightRegex); // ["%% w y w h highlight"]
+  // console.log("highlightMatches", highlightMatches);
+  const highlightFull = highlightMatches[0].replace("%% ", "").trim().split(" "); // ["w", "y", "w", "h", "highlight"]
+  const highlight = highlightFull[4].trim(); // "highlight"
+  return { highlight, highlightFull };
+}
+const { highlight, highlightFull } = getHighlightDef(file);
+/* OK */
+function getHighlightCoordinates(file, highlight, highlightFull) {
+  const highlightCoordinatesRegex = /(\d+\.\d+ )+highlight/gm;
+  const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex); // [ "59.784 66.176 76.525 16.088 highlight" ]
+  if (highlightCoordinatesMatches === null) {
+    console.log("No highlight coordinates found");
+  }
+  // console.log("highlightCoordinatesMatches", highlightCoordinatesMatches);
+  const highlightCoordinatesFull = highlightCoordinatesMatches[0].split(" "); // ["59.784", "66.176", "76.525", "16.088", "highlight"]
+  const highlightMatch = highlightCoordinatesFull.length === highlightFull.length;
+  const highlightIncludes = highlightCoordinatesFull.includes(highlight);
+  if (highlightIncludes !== highlightMatch) {
+    console.log("Highlight not matched");
+  }
+  return { highlightCoordinatesFull };
+}
+const { highlightCoordinatesFull } = getHighlightCoordinates(file, highlight, highlightFull);
+/* OK */
 function getFontSize(file) {
   const findFontRegex = /findfont [0-9]+/gm;
   const findFontMatches = file.match(findFontRegex); // [ "findfont 11" ]
@@ -86,7 +113,8 @@ function getIdentifierTexts(file) {
   const identifierTexts = [];
   for (const show of showMatches) {
     const texts = show.replace("(", "").replace(")", "").replace(" show", ""); // "a"
-    const textRemovedEscapes = texts.replace("\\", "").trim();
+    const textBug = texts.replace("\\", "").replace("''>)", "')'>").trim();
+    const textRemovedEscapes = textBug.replace("\\", "").replace("<", "&#60;").replace(">", "&#62;").trim();
     identifierTexts.push(textRemovedEscapes); // ["a"]
   }
   return { identifierTexts };
@@ -150,13 +178,24 @@ function getTagPath(lineCoordinates) {
 }
 const { tagPath } = getTagPath(lineCoordinates);
 /* OK */
-function svgBuilder(boundingBoxWidth, boundingBoxHeight, boundingBoxFull, tagText, tagPath) {
+function getTagHighlight(highlightCoordinatesFull) {
+  const tagHighlight = [];
+  // const t = (Number(highlightCoordinatesFull[2]) - 14).toFixed(3);
+  tagHighlight.push(`<g id="${highlightCoordinatesFull[4]}" transform="translate(0 -${highlightCoordinatesFull[3]})">
+<rect x="${highlightCoordinatesFull[0]}" y="-${highlightCoordinatesFull[1]}" width="${highlightCoordinatesFull[2]}" height="${highlightCoordinatesFull[3]}" fill="rgb(245, 210, 205)" />
+</g>`);
+  return { tagHighlight };
+}
+const { tagHighlight } = getTagHighlight(highlightCoordinatesFull);
+/* OK */
+function svgBuilder(boundingBoxWidth, boundingBoxHeight, boundingBoxFull, tagText, tagPath, tagHighlight) {
   const SVG = `<svg width="${boundingBoxWidth}" height="${boundingBoxHeight}" viewBox="${boundingBoxFull}" fill="none" xmlns="http://www.w3.org/2000/svg">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto');
 </style>
 <rect id="bg" width="${boundingBoxWidth}" height="${boundingBoxHeight}" fill="#ffffff"/>
 <g id="tree" transform="translate(0 ${boundingBoxHeight})" font-family="Roboto">
+${tagHighlight.join("\n")}
 ${tagPath.join("\n")}
 ${tagText.join("\n")}
 </g>
@@ -164,7 +203,14 @@ ${tagText.join("\n")}
 `;
   return { SVG };
 }
-const { SVG } = svgBuilder(boundingBoxWidth, boundingBoxHeight, boundingBoxFull, tagText, tagPath);
+const { SVG } = svgBuilder(
+  boundingBoxWidth,
+  boundingBoxHeight,
+  boundingBoxFull,
+  tagText,
+  tagPath,
+  tagHighlight
+);
 fs.writeFile(`${outputName}.svg`, SVG, "utf-8", (err) => {
   if (err) throw err;
   console.log("💱 The file has been converted! 💱");
