@@ -1,3 +1,4 @@
+import child_process from "node:child_process";
 import fs from "node:fs";
 import process from "node:process";
 import { ryb2rgb } from "./ryb2rgb.js";
@@ -9,16 +10,23 @@ export function cli(argv: string[]) {
     console.log(`Usage:
     ps2svg my_ps         => my_ps.svg
     ps2svg my_ps new_svg => new_svg.svg
+    ps2svg find        => [path/to/my_ps.ps]
   `);
 
     process.exit(1);
   }
-
-  const inputRegex = /\w+/;
-  const inputNameProcess = argv[0].match(inputRegex)?.toString().trim() as string;
-  const outputNameProcess = argv[1]?.match(inputRegex)?.toString().trim();
+  const inputRegex = /[a-zA-Z0-9\\/:_]+(\.ps)?/g;
+  const outputRegex = /\w+(\.svg)?$/g;
+  const inputNameProcess = argv[0].match(inputRegex)?.toString().replace(/\.ps/g, "").trim() as string; // my_ps
+  const outputNameProcess = argv[1]?.match(outputRegex)?.toString().replace(/\.svg/g, "").trim();
   let inputName = "";
-  let outputName: string | undefined = "";
+  let outputName = "";
+
+  if (argv.length === 1 && argv[0].match(/^find$/)) {
+    const psFiles = child_process.execFileSync("find", ["-name", "*.ps"]).toString().trim().split("\n");
+    console.log(psFiles);
+    process.exit(1);
+  }
 
   if (argv.length === 1) {
     inputName = inputNameProcess;

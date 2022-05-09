@@ -11,9 +11,10 @@ export function cli(argv) {
   `);
     process.exit(1);
   }
-  const inputRegex = /\w+/;
-  const inputNameProcess = argv[0].match(inputRegex)?.toString().trim();
-  const outputNameProcess = argv[1]?.match(inputRegex)?.toString().trim();
+  const inputRegex = /[a-zA-Z0-9\\/:_]+(\.ps)?/g;
+  const outputRegex = /\w+(\.svg)?$/g;
+  const inputNameProcess = argv[0].match(inputRegex)?.toString().replace(/\.ps/g, "").trim(); // my_ps
+  const outputNameProcess = argv[1]?.match(outputRegex)?.toString().replace(/\.svg/g, "").trim();
   let inputName = "";
   let outputName = "";
   if (argv.length === 1) {
