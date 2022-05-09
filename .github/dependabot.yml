@@ -18,7 +18,7 @@ updates:
       timezone: "America/Manaus"
     allow:
       - dependency-name: "*"
-    insecure-external-code-execution: deny
+    # insecure-external-code-execution: deny
     labels:
       - "npm dependencies"
     registries: "*"
