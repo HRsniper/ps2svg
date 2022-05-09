@@ -3,3 +3,4 @@ ps_files/
 SVG_BASE.svg
 .dockerignore
 docker-compose.yaml
+.github/

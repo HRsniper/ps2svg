@@ -24,4 +24,4 @@ updates:
     registries: "*"
     reviewers:
       - "HRsniper"
-     versioning-strategy: increase
+    versioning-strategy: increase

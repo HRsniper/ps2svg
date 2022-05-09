@@ -1,10 +1,10 @@
 {
   "name": "ps2svg",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Convert PostScript to SVG",
   "main": "./src/ps2svg.js",
   "type": "module",
-  "author": "HRsniper",
+  "author": "Hércules Ramlow <https://www.linkedin.com/in/hercules-ramlow> (https://github.com/HRsniper)",
   "license": "BSD-3-Clause",
   "repository": {
     "type": "git",
@@ -18,9 +18,10 @@
     "build": "npx tsc",
     "ryb2rgb": "npm run build && node ./src/ryb2rgb.js",
     "ps2svg": "npm run build && node ./src/ps2svg.js",
+    "prestart": "npm run build && npm run eslint",
     "start": "node ./src/ps2svg.js",
-    "format": "npx prettier --write .",
-    "lint": "npx eslint ./src/**/* --fix"
+    "prettier": "npx prettier --write .",
+    "eslint": "npx eslint ./src/ --fix"
   },
   "engines": {
     "node": ">=16.15.0"
@@ -45,5 +46,6 @@
     "eslint-plugin-prettier": "^4.0.0",
     "prettier": "^2.6.2",
     "typescript": "^4.6.4"
-  }
+  },
+  "types": "./src/@types/*.d.ts"
 }

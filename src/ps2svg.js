@@ -3,7 +3,7 @@ import process from "node:process";
 import { ryb2rgb } from "./ryb2rgb.js";
 const argv = process.argv.slice(2);
 // console.log("argv", argv);
-function cli(argv) {
+export function cli(argv) {
   if (argv.length < 1 || argv.length > 2) {
     console.log(`Usage:
     ps2svg myps        => myps.svg
@@ -34,7 +34,7 @@ function cli(argv) {
 const { inputName, outputName } = cli(argv);
 const file = fs.readFileSync(`${inputName}.ps`, "utf-8");
 /* OK */
-function getBoundingBox(file) {
+export function getBoundingBox(file) {
   const boundingBoxRegex = /%%BoundingBox: [0-9]+ [0-9]+ [0-9]+ [0-9]+/gm;
   const boundingBoxMatches = file.match(boundingBoxRegex); // [ '%%BoundingBox: 0 0 563 314' ]
   // console.log("boundingBoxMatches", boundingBoxMatches);
@@ -45,7 +45,7 @@ function getBoundingBox(file) {
 }
 const { boundingBoxFull, boundingBoxHeight, boundingBoxWidth } = getBoundingBox(file);
 /* OK */
-function getHighlightDef(file) {
+export function getHighlightDef(file) {
   const highlightRegex = /%% (\w )+(\w+)/gm;
   const highlightMatches = file.match(highlightRegex); // ["%% w y w h highlight"]
   // console.log("highlightMatches", highlightMatches);
@@ -54,7 +54,7 @@ function getHighlightDef(file) {
   return { highlight, highlightFull };
 }
 const { highlight, highlightFull } = getHighlightDef(file);
-function getHighlightColor(highlight, file) {
+export function getHighlightColor(highlight, file) {
   const highlightColor = [];
   if (highlight) {
     const highlightColorRegex = /[(\d+.\d+ )|(.\d+ )|(\d+ )]+setrgbcolor/gm;
@@ -70,7 +70,7 @@ function getHighlightColor(highlight, file) {
 }
 const { rgb } = getHighlightColor(highlight, file);
 /* OK */
-function getHighlightCoordinates(file, highlight, highlightFull) {
+export function getHighlightCoordinates(file, highlight, highlightFull) {
   const highlightCoordinatesRegex = /(\d+\.\d+ )+highlight/gm;
   const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex); // [ "59.784 66.176 76.525 16.088 highlight" ]
   if (highlightCoordinatesMatches === null) {
@@ -88,7 +88,7 @@ function getHighlightCoordinates(file, highlight, highlightFull) {
 }
 const { highlightCoordinatesFull } = getHighlightCoordinates(file, highlight, highlightFull);
 /* OK */
-function getFontSize(file) {
+export function getFontSize(file) {
   const findFontRegex = /findfont [0-9]+/gm;
   const findFontMatches = file.match(findFontRegex); // [ "findfont 11" ]
   // console.log("findFontMatches", findFontMatches);
@@ -97,7 +97,7 @@ function getFontSize(file) {
 }
 const { fontSize } = getFontSize(file);
 /* OK */
-function getMoveTo(file) {
+export function getMoveTo(file) {
   const moveToRegex = /([0-9]+\.[0-9]+ [0-9]+\.[0-9]+ moveto)/gm;
   const moveToMatches = file.match(moveToRegex); // ["162.092 297.792 moveto"]
   // console.log("moveToMatches", moveToMatches);
@@ -110,7 +110,7 @@ function getMoveTo(file) {
 }
 const { moveToCoordinates } = getMoveTo(file);
 /* OK */
-function getLineTo(file) {
+export function getLineTo(file) {
   const lineToRegex = /([0-9]+\.[0-9]+ [0-9]+\.[0-9]+ lineto)/gm;
   const lineToMatches = file.match(lineToRegex); // ["58.850 280.792 lineto"]
   // console.log("lineToMatches", lineToMatches);
@@ -123,7 +123,7 @@ function getLineTo(file) {
 }
 const { lineToCoordinates } = getLineTo(file);
 /* OK */
-function getIdentifierTexts(file) {
+export function getIdentifierTexts(file) {
   const showRegex = /\([\u0020-\u007f]+\) show/gm;
   const showMatches = file.match(showRegex); // ["(a) show"]
   // console.log("showMatches", showMatches);
@@ -138,7 +138,7 @@ function getIdentifierTexts(file) {
 }
 const { identifierTexts } = getIdentifierTexts(file);
 /* OK */
-function getLineCoordinates(moveToCoordinates, lineToCoordinates) {
+export function getLineCoordinates(moveToCoordinates, lineToCoordinates) {
   // console.log("moveToCoordinates", moveToCoordinates[0]);
   // console.log("lineToCoordinates", lineToCoordinates[0]);
   const lineCoordinates = [];
@@ -149,7 +149,7 @@ function getLineCoordinates(moveToCoordinates, lineToCoordinates) {
   return { lineCoordinates };
 }
 const { lineCoordinates } = getLineCoordinates(moveToCoordinates, lineToCoordinates);
-function getIdentifierCoordinates(lineCoordinates) {
+export function getIdentifierCoordinates(lineCoordinates) {
   const identifierCoordinates = [];
   // console.log("lineCoordinates", lineCoordinates[0]);
   // console.log("lineCoordinates", lineCoordinates[lineCoordinates.length - 1]);
@@ -165,7 +165,7 @@ function getIdentifierCoordinates(lineCoordinates) {
 }
 const { identifierCoordinates } = getIdentifierCoordinates(lineCoordinates);
 /* OK */
-function getTagText(identifierCoordinates, identifierTexts) {
+export function getTagText(identifierCoordinates, identifierTexts) {
   const tagText = [];
   for (const i in identifierCoordinates) {
     tagText.push(
@@ -177,7 +177,7 @@ function getTagText(identifierCoordinates, identifierTexts) {
 }
 const { tagText } = getTagText(identifierCoordinates, identifierTexts);
 /* OK */
-function getTagPath(lineCoordinates) {
+export function getTagPath(lineCoordinates) {
   // console.log("lineCoordinates", lineCoordinates[0]);
   // console.log("lineCoordinates", lineCoordinates[lineCoordinates.length - 1]);
   const tagPath = [];
@@ -195,7 +195,7 @@ function getTagPath(lineCoordinates) {
 }
 const { tagPath } = getTagPath(lineCoordinates);
 /* OK */
-function getTagHighlight(highlightCoordinatesFull, RGBColor) {
+export function getTagHighlight(highlightCoordinatesFull, RGBColor) {
   const tagHighlight = [];
   if (highlightCoordinatesFull.length === 0) {
     return { tagHighlight };
@@ -209,7 +209,14 @@ function getTagHighlight(highlightCoordinatesFull, RGBColor) {
 }
 const { tagHighlight } = getTagHighlight(highlightCoordinatesFull, rgb);
 /* OK */
-function svgBuilder(boundingBoxWidth, boundingBoxHeight, boundingBoxFull, tagText, tagPath, tagHighlight) {
+export function svgBuilder(
+  boundingBoxWidth,
+  boundingBoxHeight,
+  boundingBoxFull,
+  tagText,
+  tagPath,
+  tagHighlight
+) {
   const SVG = `<svg width="${boundingBoxWidth}" height="${boundingBoxHeight}" viewBox="${boundingBoxFull}" fill="none" xmlns="http://www.w3.org/2000/svg">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto');
