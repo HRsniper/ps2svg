@@ -6,8 +6,8 @@ const argv = process.argv.slice(2);
 export function cli(argv) {
   if (argv.length < 1 || argv.length > 2) {
     console.log(`Usage:
-    ps2svg myps        => myps.svg
-    ps2svg myps newsvg => newsvg.svg
+    ps2svg my_ps         => my_ps.svg
+    ps2svg my_ps new_svg => new_svg.svg
   `);
     process.exit(1);
   }
@@ -57,7 +57,7 @@ const { highlight, highlightFull } = getHighlightDef(file);
 export function getHighlightColor(highlight, file) {
   const highlightColor = [];
   if (highlight) {
-    const highlightColorRegex = /((\d\.\d+)|(\.\d+)|(\d+)\u0020)+setrgbcolor/g;
+    const highlightColorRegex = /(\d?\.\d+\u0020){3}setrgbcolor/g;
     const highlightColorMatches = file.match(highlightColorRegex); // [".95 .83 .82 setrgbcolor"]
     // console.log("highlightColorMatches", highlightColorMatches);
     const highlightColorFull = highlightColorMatches[0].replace(" setrgbcolor", "").trim().split(" "); // [".95", ".83", ".82"]
@@ -98,7 +98,7 @@ export function getFontSize(file) {
 const { fontSize } = getFontSize(file);
 /* OK */
 export function getMoveTo(file) {
-  const moveToRegex = /(\d+\.\d+\u0020)+moveto/g;
+  const moveToRegex = /(\d+\.\d+\u0020){2}moveto/g;
   const moveToMatches = file.match(moveToRegex); // ["162.092 297.792 moveto"]
   // console.log("moveToMatches", moveToMatches);
   const moveToCoordinates = [];
@@ -111,7 +111,7 @@ export function getMoveTo(file) {
 const { moveToCoordinates } = getMoveTo(file);
 /* OK */
 export function getLineTo(file) {
-  const lineToRegex = /(\d+\.\d+\u0020)+lineto/g;
+  const lineToRegex = /(\d+\.\d+\u0020){2}lineto/g;
   const lineToMatches = file.match(lineToRegex); // ["58.850 280.792 lineto"]
   // console.log("lineToMatches", lineToMatches);
   const lineToCoordinates = [];
@@ -124,7 +124,7 @@ export function getLineTo(file) {
 const { lineToCoordinates } = getLineTo(file);
 /* OK */
 export function getIdentifierTexts(file) {
-  const showRegex = /[\u0020-\u007e]+\u0020show/g;
+  const showRegex = /[\u0020-\u007e]+show/g;
   const showMatches = file.match(showRegex); // ["(a) show"]
   // console.log("showMatches", showMatches);
   const identifierTexts = [];
