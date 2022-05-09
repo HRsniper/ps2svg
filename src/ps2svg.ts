@@ -45,7 +45,7 @@ const file = fs.readFileSync(`${inputName}.ps`, "utf-8");
 
 /* OK */
 export function getBoundingBox(file: string) {
-  const boundingBoxRegex = /%%BoundingBox: [0-9]+ [0-9]+ [0-9]+ [0-9]+/gm;
+  const boundingBoxRegex = /%%BoundingBox: (\d+\u0020?)+/g;
   const boundingBoxMatches = file.match(boundingBoxRegex) as string[]; // [ '%%BoundingBox: 0 0 563 314' ]
   // console.log("boundingBoxMatches", boundingBoxMatches);
   const boundingBoxFull = boundingBoxMatches[0].replace("%%BoundingBox: ", "").trim(); // "0 0 563 314"
@@ -57,7 +57,7 @@ const { boundingBoxFull, boundingBoxHeight, boundingBoxWidth } = getBoundingBox(
 
 /* OK */
 export function getHighlightDef(file: string) {
-  const highlightRegex = /%% (\w )+(\w+)/gm;
+  const highlightRegex = /%% (\w+\u0020?)+/g;
   const highlightMatches = file.match(highlightRegex) as string[]; // ["%% w y w h highlight"]
   // console.log("highlightMatches", highlightMatches);
   const highlightFull = highlightMatches[0].replace("%% ", "").trim().split(" "); // ["w", "y", "w", "h", "highlight"]
@@ -69,7 +69,7 @@ const { highlight, highlightFull } = getHighlightDef(file);
 export function getHighlightColor(highlight: string, file: string) {
   const highlightColor: number[] = [];
   if (highlight) {
-    const highlightColorRegex = /[(\d+.\d+ )|(.\d+ )|(\d+ )]+setrgbcolor/gm;
+    const highlightColorRegex = /((\d\.\d+)|(\.\d+)|(\d+)\u0020)+setrgbcolor/g;
     const highlightColorMatches = file.match(highlightColorRegex) as string[]; // [".95 .83 .82 setrgbcolor"]
     // console.log("highlightColorMatches", highlightColorMatches);
     const highlightColorFull = highlightColorMatches[0].replace(" setrgbcolor", "").trim().split(" "); // [".95", ".83", ".82"]
@@ -84,7 +84,7 @@ const { rgb } = getHighlightColor(highlight, file);
 
 /* OK */
 export function getHighlightCoordinates(file: string, highlight: string, highlightFull: string[]) {
-  const highlightCoordinatesRegex = /(\d+\.\d+ )+highlight/gm;
+  const highlightCoordinatesRegex = /(\d+\.\d+\u0020)+highlight/g;
   const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex) as string[]; // [ "59.784 66.176 76.525 16.088 highlight" ]
   if (highlightCoordinatesMatches === null) {
     console.log("No highlight coordinates found");
@@ -103,7 +103,7 @@ const { highlightCoordinatesFull } = getHighlightCoordinates(file, highlight, hi
 
 /* OK */
 export function getFontSize(file: string) {
-  const findFontRegex = /findfont [0-9]+/gm;
+  const findFontRegex = /findfont\u0020\d+/g;
   const findFontMatches = file.match(findFontRegex) as string[]; // [ "findfont 11" ]
   // console.log("findFontMatches", findFontMatches);
   const fontSize = findFontMatches[0].replace("findfont ", "").trim(); // "11"
@@ -113,7 +113,7 @@ const { fontSize } = getFontSize(file);
 
 /* OK */
 export function getMoveTo(file: string) {
-  const moveToRegex = /([0-9]+\.[0-9]+ [0-9]+\.[0-9]+ moveto)/gm;
+  const moveToRegex = /(\d+\.\d+\u0020)+moveto/g;
   const moveToMatches = file.match(moveToRegex) as string[]; // ["162.092 297.792 moveto"]
   // console.log("moveToMatches", moveToMatches);
   const moveToCoordinates: string[][] = [];
@@ -127,7 +127,7 @@ const { moveToCoordinates } = getMoveTo(file);
 
 /* OK */
 export function getLineTo(file: string) {
-  const lineToRegex = /([0-9]+\.[0-9]+ [0-9]+\.[0-9]+ lineto)/gm;
+  const lineToRegex = /(\d+\.\d+\u0020)+lineto/g;
   const lineToMatches = file.match(lineToRegex) as string[]; // ["58.850 280.792 lineto"]
   // console.log("lineToMatches", lineToMatches);
   const lineToCoordinates: string[][] = [];
@@ -141,15 +141,19 @@ const { lineToCoordinates } = getLineTo(file);
 
 /* OK */
 export function getIdentifierTexts(file: string) {
-  const showRegex = /\([\u0020-\u007f]+\) show/gm;
+  const showRegex = /[\u0020-\u007e]+\u0020show/g;
   const showMatches = file.match(showRegex) as string[]; // ["(a) show"]
   // console.log("showMatches", showMatches);
   const identifierTexts: string[] = [];
   for (const show of showMatches) {
     const texts = show.replace("(", "").replace(")", "").replace(" show", ""); // "a"
-    const textBug = texts.replace("\\", "").replace("''>)", "')'>").trim();
-    const textRemovedEscapes = textBug.replace("\\", "").replace("<", "&#60;").replace(">", "&#62;").trim();
-    identifierTexts.push(textRemovedEscapes); // ["a"]
+    const textRemovedEscapes = texts
+      .replace(/^\\/g, "") // \\n => \n
+      .replace(/'\\'>\)/g, "')'>")
+      .trim();
+    const text = textRemovedEscapes.replace(/</g, "&#60;").replace(/>/g, "&#62;").trim();
+    // console.log("text", text);
+    identifierTexts.push(text); // ["a"]
   }
   return { identifierTexts };
 }
