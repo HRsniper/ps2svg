@@ -11,7 +11,6 @@ export function cli(argv: string[]) {
   if (argv.length < 1 || argv.length > 2) {
     console.log(`Usage: (.ps | .svg)? is optional
     ps2svg find-all                   => ["path/to/my_ps.ps"]
-    ps2svg find my_ps(.ps)?           => path/to/my_ps.ps
     ps2svg path/to/my_ps(.ps)?        => my_ps.svg
     ps2svg my_ps(.ps)?                => my_ps.svg
     ps2svg my_ps(.ps)? new_svg(.svg)? => new_svg.svg
@@ -39,16 +38,6 @@ export function cli(argv: string[]) {
   const psFile = path.basename(inputMatches[0]);
   let inputName = "";
   let outputName = "";
-
-  if (argv.length === 1 && argv[0].match(/^find\u0020\w+/g)) {
-    const psFiles = child_process
-      .execFileSync("find", ["-name", `${psFile}.ps`])
-      .toString()
-      .trim()
-      .split("\n");
-    console.log(psFiles);
-    process.exit(1);
-  }
 
   if (argv.length === 1 && argv[0].match(/^find-all$/)) {
     const psFiles = child_process.execFileSync("find", ["-name", "*.ps"]).toString().trim().split("\n");

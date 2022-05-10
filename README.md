@@ -13,7 +13,6 @@ npm i -g ps2svg
 ```bash
 # (.ps | .svg)? is optional
 $ ps2svg find-all                   # => ["path/to/my_ps.ps"]
-$ ps2svg find my_ps(.ps)?           # => path/to/my_ps.ps
 $ ps2svg path/to/my_ps(.ps)?        # => my_ps.svg
 $ ps2svg my_ps(.ps)?                # => my_ps.svg
 $ ps2svg my_ps(.ps)? new_svg(.svg)? # => new_svg.svg
