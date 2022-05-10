@@ -1,6 +1,15 @@
+.github/
+.vscode/
 imgs/*.png
 ps_files/
-SVG_BASE.svg
+src/
 .dockerignore
+.editorconfig
+.eslintrc.json
+.prettierignore
+.prettierrc
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
 docker-compose.yaml
-.github/
+SVG_BASE.svg
+tsconfig.json

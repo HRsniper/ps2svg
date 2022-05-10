@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-import "../src/ps2svg.js";
+import "../dist/ps2svg.js";

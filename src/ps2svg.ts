@@ -1,7 +1,9 @@
 import child_process from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
 import process from "node:process";
 import { ryb2rgb } from "./ryb2rgb.js";
+// import fsp from "node:fs/promises";
 
 const argv = process.argv.slice(2);
 // console.log("argv", argv);
@@ -31,6 +33,7 @@ export function cli(argv: string[]) {
     output = outputMatches[0].replace(/\.svg/g, "").trim(); // new_svg
   }
 
+  const folderPsFile = path.dirname(inputMatches[0]);
   let inputName = "";
   let outputName = "";
 
@@ -45,7 +48,10 @@ export function cli(argv: string[]) {
   }
   if (argv.length === 2) {
     inputName = input;
-    outputName = output;
+    outputName = path.join(folderPsFile, output);
+  }
+  if (outputName === "") {
+    outputName = inputName;
   }
   // console.log("(1)", inputName);
   // console.log("(2)", outputName);
@@ -53,9 +59,10 @@ export function cli(argv: string[]) {
 }
 const { inputName, outputName } = cli(argv);
 
+// const file = await fsp.readFile(`${inputName}.ps`, "utf-8");
 const file = fs.readFileSync(`${inputName}.ps`, "utf-8");
 
-/* OK */
+// OK
 export function getBoundingBox(file: string) {
   const boundingBoxRegex = /%%BoundingBox: (\d+\u0020?)+/g;
   const boundingBoxMatches = file.match(boundingBoxRegex) as string[]; // [ '%%BoundingBox: 0 0 563 314' ]
@@ -67,7 +74,7 @@ export function getBoundingBox(file: string) {
 }
 const { boundingBoxFull, boundingBoxHeight, boundingBoxWidth } = getBoundingBox(file);
 
-/* OK */
+// OK
 export function getHighlightDef(file: string) {
   const highlightRegex = /%% (\w+\u0020?)+/g;
   const highlightMatches = file.match(highlightRegex) as string[]; // ["%% w y w h highlight"]
@@ -94,7 +101,7 @@ export function getHighlightColor(highlight: string, file: string) {
 }
 const { rgb } = getHighlightColor(highlight, file);
 
-/* OK */
+// OK
 export function getHighlightCoordinates(file: string, highlight: string, highlightFull: string[]) {
   const highlightCoordinatesRegex = /(\d+\.\d+\u0020)+highlight/g;
   const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex) as string[]; // [ "59.784 66.176 76.525 16.088 highlight" ]
@@ -113,7 +120,7 @@ export function getHighlightCoordinates(file: string, highlight: string, highlig
 }
 const { highlightCoordinatesFull } = getHighlightCoordinates(file, highlight, highlightFull);
 
-/* OK */
+// OK
 export function getFontSize(file: string) {
   const findFontRegex = /findfont\u0020\d+/g;
   const findFontMatches = file.match(findFontRegex) as string[]; // [ "findfont 11" ]
@@ -123,7 +130,7 @@ export function getFontSize(file: string) {
 }
 const { fontSize } = getFontSize(file);
 
-/* OK */
+// OK
 export function getMoveTo(file: string) {
   const moveToRegex = /(\d+\.\d+\u0020){2}moveto/g;
   const moveToMatches = file.match(moveToRegex) as string[]; // ["162.092 297.792 moveto"]
@@ -137,7 +144,7 @@ export function getMoveTo(file: string) {
 }
 const { moveToCoordinates } = getMoveTo(file);
 
-/* OK */
+// OK
 export function getLineTo(file: string) {
   const lineToRegex = /(\d+\.\d+\u0020){2}lineto/g;
   const lineToMatches = file.match(lineToRegex) as string[]; // ["58.850 280.792 lineto"]
@@ -151,7 +158,7 @@ export function getLineTo(file: string) {
 }
 const { lineToCoordinates } = getLineTo(file);
 
-/* OK */
+// OK
 export function getIdentifierTexts(file: string) {
   const showRegex = /[\u0020-\u007e]+show/g;
   const showMatches = file.match(showRegex) as string[]; // ["(a) show"]
@@ -171,7 +178,7 @@ export function getIdentifierTexts(file: string) {
 }
 const { identifierTexts } = getIdentifierTexts(file);
 
-/* OK */
+// OK
 export function getLineCoordinates(moveToCoordinates: string[][], lineToCoordinates: string[][]) {
   // console.log("moveToCoordinates", moveToCoordinates[0]);
   // console.log("lineToCoordinates", lineToCoordinates[0]);
@@ -200,7 +207,7 @@ export function getIdentifierCoordinates(lineCoordinates: string[][][]) {
 }
 const { identifierCoordinates } = getIdentifierCoordinates(lineCoordinates);
 
-/* OK */
+// OK
 export function getTagText(identifierCoordinates: string[][], identifierTexts: string[]) {
   const tagText: string[] = [];
   for (const i in identifierCoordinates) {
@@ -213,7 +220,7 @@ export function getTagText(identifierCoordinates: string[][], identifierTexts: s
 }
 const { tagText } = getTagText(identifierCoordinates, identifierTexts);
 
-/* OK */
+// OK
 export function getTagPath(lineCoordinates: string[][][]) {
   // console.log("lineCoordinates", lineCoordinates[0]);
   // console.log("lineCoordinates", lineCoordinates[lineCoordinates.length - 1]);
@@ -232,7 +239,7 @@ export function getTagPath(lineCoordinates: string[][][]) {
 }
 const { tagPath } = getTagPath(lineCoordinates);
 
-/* OK */
+// OK
 export function getTagHighlight(highlightCoordinatesFull: string[], RGBColor: number[]) {
   const tagHighlight: string[] = [];
   if (highlightCoordinatesFull.length === 0) {
@@ -247,7 +254,7 @@ export function getTagHighlight(highlightCoordinatesFull: string[], RGBColor: nu
 }
 const { tagHighlight } = getTagHighlight(highlightCoordinatesFull, rgb);
 
-/* OK */
+// OK
 export function svgBuilder(
   boundingBoxWidth: string,
   boundingBoxHeight: string,
