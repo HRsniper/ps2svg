@@ -1,6 +1,6 @@
 export declare function cli(argv: string[]): {
   inputName: string;
-  outputName: string | undefined;
+  outputName: string;
 };
 export declare function getBoundingBox(file: string): {
   boundingBoxWidth: string;

@@ -10,15 +10,27 @@ export function cli(argv: string[]) {
     console.log(`Usage:
     ps2svg my_ps         => my_ps.svg
     ps2svg my_ps new_svg => new_svg.svg
-    ps2svg find        => [path/to/my_ps.ps]
-  `);
-
+    ps2svg find          => ["path/to/my_ps.ps"]
+    `);
     process.exit(1);
   }
-  const inputRegex = /[a-zA-Z0-9\\/:_]+(\.ps)?/g;
+
+  const inputRegex = /[.:\w\d\\/]+(\.ps)?/g;
   const outputRegex = /\w+(\.svg)?$/g;
-  const inputNameProcess = argv[0].match(inputRegex)?.toString().replace(/\.ps/g, "").trim() as string; // my_ps
-  const outputNameProcess = argv[1]?.match(outputRegex)?.toString().replace(/\.svg/g, "").trim();
+
+  const inputMatches = argv[0].match(inputRegex) as string[];
+  // console.log("inputMatches", inputMatches);
+  const input = inputMatches[0].replace(/\.ps/g, "").trim(); // my_ps
+
+  const outputMatches = argv[1]?.match(outputRegex) as string[];
+  // console.log("outputMatches", outputMatches);
+  let output: string;
+  if (outputMatches === undefined) {
+    output = "";
+  } else {
+    output = outputMatches[0].replace(/\.svg/g, "").trim(); // new_svg
+  }
+
   let inputName = "";
   let outputName = "";
 
@@ -29,24 +41,16 @@ export function cli(argv: string[]) {
   }
 
   if (argv.length === 1) {
-    inputName = inputNameProcess;
-    outputName = "";
+    inputName = input;
   }
-
   if (argv.length === 2) {
-    inputName = inputNameProcess;
-    outputName = outputNameProcess;
+    inputName = input;
+    outputName = output;
   }
-
-  if (outputName === "") {
-    outputName = inputName;
-  } else {
-    outputName;
-  }
-
+  // console.log("(1)", inputName);
+  // console.log("(2)", outputName);
   return { inputName, outputName };
 }
-
 const { inputName, outputName } = cli(argv);
 
 const file = fs.readFileSync(`${inputName}.ps`, "utf-8");
