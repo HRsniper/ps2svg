@@ -1,5 +1,5 @@
 export function ryb2rgb([R, Y, B]: number[]) {
-  const REGEX = /(\d+\.\d+)|(\.\d+)|(\d+)/gm;
+  const REGEX = /\d?\.\d+/g;
   const WHITE_RGB = 255;
   const WHITE_RYB = 1.0;
   const R_ryb = Number(R.toString().match(REGEX));
