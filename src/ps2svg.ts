@@ -40,8 +40,21 @@ export function cli(argv: string[]) {
   let outputName = "";
 
   if (argv.length === 1 && argv[0].match(/^find-all$/)) {
-    const psFiles = child_process.execFileSync("find", ["-name", "*.ps"]).toString().trim().split("\n");
-    console.log(psFiles);
+    if (process.platform === "win32") {
+      const getItem = child_process.spawn("Get-ChildItem", ["-Recurse", "-Filter", "*.ps"]);
+      const select = child_process.spawn("Select-Object", ["-Property", "FullName"]);
+      getItem.stdout.pipe(select.stdin);
+
+      select.stdout.on("data", (data) => {
+        const files = data.toString().trim().split("\r\n");
+        console.log(files);
+      });
+    }
+    if (process.platform === "linux") {
+      const find = child_process.spawnSync("find", ["-name", "*.ps"]).stdout.toString().trim().split("\n");
+      console.log(find);
+    }
+
     process.exit(1);
   }
 
