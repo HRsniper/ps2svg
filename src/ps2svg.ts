@@ -35,7 +35,6 @@ export function cli(argv: string[]) {
   }
 
   const folderPsFile = path.dirname(inputMatches[0]);
-  const psFile = path.basename(inputMatches[0]);
   let inputName = "";
   let outputName = "";
 
