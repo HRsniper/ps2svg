@@ -81,6 +81,11 @@ export function getBoundingBox(file: string) {
   const boundingBoxRegex = /%%BoundingBox: (\d+\u0020?)+/g;
   const boundingBoxMatches = file.match(boundingBoxRegex) as string[]; // [ '%%BoundingBox: 0 0 563 314' ]
   // console.log("boundingBoxMatches", boundingBoxMatches);
+
+  if (boundingBoxMatches === null) {
+    return { boundingBoxFull: "0 0 2480 3508", boundingBoxHeight: "3508", boundingBoxWidth: "2480" };
+  }
+
   const boundingBoxFull = boundingBoxMatches[0].replace("%%BoundingBox: ", "").trim(); // "0 0 563 314"
   const boundingBoxWidth = boundingBoxFull.split(" ")[2].trim(); // "563"
   const boundingBoxHeight = boundingBoxFull.split(" ")[3].trim(); // "314"
@@ -90,9 +95,6 @@ const { boundingBoxFull, boundingBoxHeight, boundingBoxWidth } = getBoundingBox(
 
 // OK
 export function getHighlightDef(file: string) {
-  // const highlightRegex = /%% (\w+\u0020?)+/g; // %% w y w h highlight
-  // const highlightFull = highlightMatches[0].replace("%% ", "").trim().split(" "); // ["w", "y", "w", "h", "highlight"]
-  // const highlight = highlightFull[4].trim(); // "highlight"
   const highlightRegex = /\/\w+\u0020?{/g; // /highlight {
   const highlightMatches = file.match(highlightRegex) as string[]; // ["/highlight {"]
   // console.log("highlightMatches", highlightMatches);
@@ -107,6 +109,11 @@ export function getHighlightColor(highlight: string, file: string) {
     const highlightColorRegex = /(\d?\.\d+\u0020){3}setrgbcolor/g;
     const highlightColorMatches = file.match(highlightColorRegex) as string[]; // [".95 .83 .82 setrgbcolor"]
     // console.log("highlightColorMatches", highlightColorMatches);
+
+    if (highlightColorMatches === null) {
+      return { rgb: [0, 0, 0] };
+    }
+
     const highlightColorFull = highlightColorMatches[0].replace(" setrgbcolor", "").trim().split(" "); // [".95", ".83", ".82"]
     for (const i of highlightColorFull) {
       highlightColor.push(Number(i)); // [.95, .83, .82]
@@ -119,9 +126,13 @@ const { rgb } = getHighlightColor(highlight, file);
 
 // OK
 export function getHighlightCoordinates(file: string, highlight: string) {
-  const highlightCoordinatesRegex = /(\d+\.\d+\u0020)+\w+/g;
+  const highlightCoordinatesRegex = /((\d+\.)?\d+\u0020)+\w+/g;
   const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex) as string[]; // [ "59.784 66.176 76.525 16.088 highlight" ]
   // console.log("highlightCoordinatesMatches", highlightCoordinatesMatches);
+
+  if (highlightCoordinatesMatches === null) {
+    return { highlightCoordinatesFull: [""] };
+  }
 
   const highlightCoordinates: string[] = [];
   for (const i of highlightCoordinatesMatches) {
@@ -152,9 +163,14 @@ const { fontSize } = getFontSize(file);
 
 // OK
 export function getMoveTo(file: string) {
-  const moveToRegex = /(\d+\.\d+\u0020){2}moveto/g;
+  const moveToRegex = /((\d+\.)?\d+\u0020){2}moveto/g;
   const moveToMatches = file.match(moveToRegex) as string[]; // ["162.092 297.792 moveto"]
   // console.log("moveToMatches", moveToMatches);
+
+  if (moveToMatches === null) {
+    return { moveToCoordinates: [[""]] };
+  }
+
   const moveToCoordinates: string[][] = [];
   for (const moveTo of moveToMatches) {
     const moveToCoordinate = moveTo.replace(" moveto", "").trim().split(" "); // ["162.092", "297.792"]
@@ -166,9 +182,14 @@ const { moveToCoordinates } = getMoveTo(file);
 
 // OK
 export function getLineTo(file: string) {
-  const lineToRegex = /(\d+\.\d+\u0020){2}lineto/g;
+  const lineToRegex = /((\d+\.)?\d+\u0020){2}lineto/g;
   const lineToMatches = file.match(lineToRegex) as string[]; // ["58.850 280.792 lineto"]
   // console.log("lineToMatches", lineToMatches);
+
+  if (lineToMatches === null) {
+    return { lineToCoordinates: [[""]] };
+  }
+
   const lineToCoordinates: string[][] = [];
   for (const lineTo of lineToMatches) {
     const lineToCoordinate = lineTo.replace(" lineto", "").trim().split(" "); // ["58.850", "280.792"]
@@ -265,11 +286,11 @@ export function getTagHighlight(highlightCoordinatesFull: string[], RGBColor: nu
   if (highlightCoordinatesFull.length === 0) {
     return { tagHighlight };
   }
-  // const t = (Number(highlightCoordinatesFull[2]) - 14).toFixed(3);
   // 0.95 0.82 0.83 setrgbcolor => #f2d4d1 / rgb(242, 212, 209)
   tagHighlight.push(`<g id="${highlightCoordinatesFull[4]}" transform="translate(0 -${highlightCoordinatesFull[3]})">
 <rect x="${highlightCoordinatesFull[0]}" y="-${highlightCoordinatesFull[1]}" width="${highlightCoordinatesFull[2]}" height="${highlightCoordinatesFull[3]}" fill="rgb(${RGBColor[0]}, ${RGBColor[1]}, ${RGBColor[2]})" />
 </g>`);
+  // console.log("tagHighlight", tagHighlight);
   return { tagHighlight };
 }
 const { tagHighlight } = getTagHighlight(highlightCoordinatesFull, rgb);
