@@ -90,14 +90,16 @@ const { boundingBoxFull, boundingBoxHeight, boundingBoxWidth } = getBoundingBox(
 
 // OK
 export function getHighlightDef(file: string) {
-  const highlightRegex = /%% (\w+\u0020?)+/g;
-  const highlightMatches = file.match(highlightRegex) as string[]; // ["%% w y w h highlight"]
+  // const highlightRegex = /%% (\w+\u0020?)+/g; // %% w y w h highlight
+  // const highlightFull = highlightMatches[0].replace("%% ", "").trim().split(" "); // ["w", "y", "w", "h", "highlight"]
+  // const highlight = highlightFull[4].trim(); // "highlight"
+  const highlightRegex = /\/\w+\u0020?{/g; // /highlight {
+  const highlightMatches = file.match(highlightRegex) as string[]; // ["/highlight {"]
   // console.log("highlightMatches", highlightMatches);
-  const highlightFull = highlightMatches[0].replace("%% ", "").trim().split(" "); // ["w", "y", "w", "h", "highlight"]
-  const highlight = highlightFull[4].trim(); // "highlight"
-  return { highlight, highlightFull };
+  const highlight = highlightMatches[0].replace("/", "").replace(" {", "").trim(); // highlight
+  return { highlight };
 }
-const { highlight, highlightFull } = getHighlightDef(file);
+const { highlight } = getHighlightDef(file);
 
 export function getHighlightColor(highlight: string, file: string) {
   const highlightColor: number[] = [];
@@ -116,22 +118,27 @@ export function getHighlightColor(highlight: string, file: string) {
 const { rgb } = getHighlightColor(highlight, file);
 
 // OK
-export function getHighlightCoordinates(file: string, highlight: string, highlightFull: string[]) {
-  const highlightCoordinatesRegex = /(\d+\.\d+\u0020)+highlight/g;
+export function getHighlightCoordinates(file: string, highlight: string) {
+  const highlightCoordinatesRegex = /(\d+\.\d+\u0020)+\w+/g;
   const highlightCoordinatesMatches = file.match(highlightCoordinatesRegex) as string[]; // [ "59.784 66.176 76.525 16.088 highlight" ]
-  if (highlightCoordinatesMatches === null) {
+  // console.log("highlightCoordinatesMatches", highlightCoordinatesMatches);
+
+  const highlightCoordinates: string[] = [];
+  for (const i of highlightCoordinatesMatches) {
+    if (i.includes(highlight)) {
+      highlightCoordinates.push(i);
+    }
+  }
+  // console.log(highlightCoordinates);
+
+  if (highlightCoordinates.length === 0) {
     return { highlightCoordinatesFull: [] };
   }
-  // console.log("highlightCoordinatesMatches", highlightCoordinatesMatches);
-  const highlightCoordinatesFull = highlightCoordinatesMatches[0].split(" "); // ["59.784", "66.176", "76.525", "16.088", "highlight"]
-  const highlightMatch = highlightCoordinatesFull.length === highlightFull.length;
-  const highlightIncludes = highlightCoordinatesFull.includes(highlight);
-  if (highlightIncludes !== highlightMatch) {
-    console.log("Highlight not matched");
-  }
+  const highlightCoordinatesFull = highlightCoordinates[0].split(" "); // ["59.784", "66.176", "76.525", "16.088", "highlight"]
+
   return { highlightCoordinatesFull };
 }
-const { highlightCoordinatesFull } = getHighlightCoordinates(file, highlight, highlightFull);
+const { highlightCoordinatesFull } = getHighlightCoordinates(file, highlight);
 
 // OK
 export function getFontSize(file: string) {
