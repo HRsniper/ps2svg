@@ -5,7 +5,7 @@
   "main": "./dist/ps2svg.js",
   "type": "module",
   "author": "Hércules Ramlow <https://www.linkedin.com/in/hercules-ramlow> (https://github.com/HRsniper)",
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HRsniper/ps2svg.git"
@@ -39,14 +39,14 @@
     "ps2svg"
   ],
   "devDependencies": {
-    "@types/node": "^18.6.3",
-    "@typescript-eslint/eslint-plugin": "^5.31.0",
-    "@typescript-eslint/parser": "^5.31.0",
-    "eslint": "^8.20.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.7.1",
-    "typescript": "^4.7.4"
+    "@types/node": "^24.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@typescript-eslint/parser": "^8.44.1",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2"
   },
   "types": "./dist/*.d.ts"
 }

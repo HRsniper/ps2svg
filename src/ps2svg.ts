@@ -2,7 +2,7 @@ import child_process from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { ryb2rgb } from "./ryb2rgb.js";
+import { ryb2rgb, RYBColor } from "./ryb2rgb.js";
 // import fsp from "node:fs/promises";
 
 const argv = process.argv.slice(2);
@@ -119,7 +119,7 @@ export function getHighlightColor(highlight: string, file: string) {
       highlightColor.push(Number(i)); // [.95, .83, .82]
     }
   }
-  const rgb = ryb2rgb(highlightColor);
+  const rgb = ryb2rgb(highlightColor as RYBColor);
   return { rgb };
 }
 const { rgb } = getHighlightColor(highlight, file);

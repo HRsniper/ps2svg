@@ -65,21 +65,23 @@ function ryb2rgb([r, y, b]: RYBColor): RGBColor {
   // console.log(`ryb(${r_norm}, ${y_norm}, ${b_norm})`);
 
   const rgb = trilinearInterpolate(RYB_CUBE, r_norm, y_norm, b_norm);
-  console.log(`rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
+  // console.log(`rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
   return rgb;
 }
 
-ryb2rgb([0.95, 0.83, 0.82]); // rgb(242, 210, 209)
-ryb2rgb([0.95, 0.82, 0.83]); // rgb(242, 210, 212)
-ryb2rgb([1.0, 0.9, 0.8]); // rgb(255, 217, 204)
-ryb2rgb([1.1, 0.9, 0.8]); // rgb(255, 217, 204)
-ryb2rgb([1.0, 1.0, 1.0]); // rgb(255, 255, 255)
-ryb2rgb([1.0, 0, 0]); // rgb(255, 0, 0)
-ryb2rgb([0, 1.0, 0]); // rgb(0, 128, 0)
-ryb2rgb([0, 0, 1.0]); // rgb(0, 128, 255)
-ryb2rgb([1.0, 1.0, 0]); // rgb(255, 128, 0)
-ryb2rgb([1.0, 0, 1.0]); // rgb(255, 128, 255)
-ryb2rgb([0, 1.0, 1.0]); // rgb(0, 255, 255);
+export { RGBColor, RYBColor, ryb2rgb };
+
+// ryb2rgb([0.95, 0.83, 0.82]);
+// ryb2rgb([0.95, 0.82, 0.83]);
+// ryb2rgb([1.0, 0.9, 0.8]);
+// ryb2rgb([1.1, 0.9, 0.8]);
+// ryb2rgb([1.0, 1.0, 1.0]);
+// ryb2rgb([1.0, 0, 0]);
+// ryb2rgb([0, 1.0, 0]);
+// ryb2rgb([0, 0, 1.0]);
+// ryb2rgb([1.0, 1.0, 0]);
+// ryb2rgb([1.0, 0, 1.0]);
+// ryb2rgb([0, 1.0, 1.0]);
 
 // rgb(227, 194, 184)
 // rgb(226, 192, 185)
