@@ -12,16 +12,15 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "sunday"
-      timezone: "America/Manaus"
+    # schedule:
+    #   interval: "weekly"
+    #   day: "sunday"
+    #   timezone: "America/Manaus"
     allow:
       - dependency-name: "*"
-#     insecure-external-code-execution: deny
     labels:
       - "npm dependencies"
-#     registries: "*"
+      # registries: "*"
     reviewers:
       - "HRsniper"
     versioning-strategy: increase

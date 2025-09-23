@@ -1,6 +1,6 @@
 {
   "name": "ps2svg",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Convert PostScript to SVG",
   "main": "./dist/ps2svg.js",
   "type": "module",
@@ -25,7 +25,7 @@
     "prepublishOnly": "npm run prestart"
   },
   "engines": {
-    "node": ">=16.15.0"
+    "node": ">=24.8.0"
   },
   "bin": {
     "ps2svg": "./bin/ps2svg.js"
