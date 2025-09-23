@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org/
+      - run: npm install
       - run: npm ci
       - run: npm run build
       - run: npm run eslint
