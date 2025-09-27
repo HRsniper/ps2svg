@@ -655,6 +655,7 @@ function interpret(
             `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
           );
         }
+        path = new PathBuilder(); // Limpa path após show
         continue;
       }
       if (op === "showpage") {
