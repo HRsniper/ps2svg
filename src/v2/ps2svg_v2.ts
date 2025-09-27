@@ -1,6 +1,8 @@
+console.time("execução");
+
 import * as fs from "node:fs";
 import { fileInputName, fileOutputName } from "./cli.js";
-import { ryb2rgb, cmyk2rgb } from "../color2rgb.js";
+import { ryb2rgb, cmyk2rgb, color2rgb } from "../color2rgb.js";
 
 type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
 
@@ -437,7 +439,6 @@ function interpret(
         path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
         continue;
       }
-
       if (op === "rcurveto") {
         const dy3 = safePopNumber(0),
           dx3 = safePopNumber(0);
@@ -463,8 +464,6 @@ function interpret(
         path.close();
         continue;
       }
-
-      // --- graphics ops
       if (op === "stroke") {
         flushPathAsStroke(path, gState, svgOut);
         path = new PathBuilder();
@@ -484,12 +483,11 @@ function interpret(
         path = new PathBuilder();
         continue;
       }
-
       if (op === "setrgbcolor") {
         const b = safePopNumber(0);
         const g = safePopNumber(0);
         const r = safePopNumber(0);
-        const rgb = ryb2rgb([r, g, b]).toString();
+        const rgb = color2rgb([r, g, b]).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
         continue;
@@ -554,8 +552,6 @@ function interpret(
         if (st) gState = st;
         continue;
       }
-
-      // improved arc
       if (op === "arc") {
         const ang2 = safePopNumber(0);
         const ang1 = safePopNumber(0);
@@ -787,3 +783,5 @@ export function convertToFile(inPath: string, outPath: string) {
   console.log(`Converted: ${inPath} -> ${outPath}.svg`);
 }
 convertToFile(fileInputName, fileOutputName);
+
+console.timeEnd("execução");

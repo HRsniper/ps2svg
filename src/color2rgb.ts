@@ -5,10 +5,12 @@ type CMYKColor = [number, number, number, number];
 const COLOR_CONSTANTS = {
   RGB_MAX: 255,
   RGB_MIN: 0,
-  RYB_MAX: 1.0,
-  RYB_MIN: 0.0,
-  CMYK_MAX: 1.0,
-  CMYK_MIN: 0.0
+  RGB_MAX_PS: 1.0,
+  RGB_MIN_PS: 0.0,
+  RYB_MAX_PS: 1.0,
+  RYB_MIN_PS: 0.0,
+  CMYK_MAX_PS: 1.0,
+  CMYK_MIN_PS: 0.0
 };
 
 // Vértices do cubo RGB → RGB
@@ -74,9 +76,9 @@ function trilinearInterpolate(cube: RGBColor[], x: number, y: number, z: number)
 
 // Conversão RYB → RGB com interpolação trilinear
 function ryb2rgb([r, y, b]: RYBColor) {
-  const r_norm = clamp(r, COLOR_CONSTANTS.RYB_MIN, COLOR_CONSTANTS.RYB_MAX);
-  const y_norm = clamp(y, COLOR_CONSTANTS.RYB_MIN, COLOR_CONSTANTS.RYB_MAX);
-  const b_norm = clamp(b, COLOR_CONSTANTS.RYB_MIN, COLOR_CONSTANTS.RYB_MAX);
+  const r_norm = clamp(r, COLOR_CONSTANTS.RYB_MIN_PS, COLOR_CONSTANTS.RYB_MAX_PS);
+  const y_norm = clamp(y, COLOR_CONSTANTS.RYB_MIN_PS, COLOR_CONSTANTS.RYB_MAX_PS);
+  const b_norm = clamp(b, COLOR_CONSTANTS.RYB_MIN_PS, COLOR_CONSTANTS.RYB_MAX_PS);
   // console.log(`ryb(${r_norm}, ${y_norm}, ${b_norm})`);
 
   const rgb = trilinearInterpolate(RGB_CUBE, r_norm, y_norm, b_norm);
@@ -89,10 +91,10 @@ function ryb2rgb([r, y, b]: RYBColor) {
 
 // Conversão CMYK → RGB
 function cmyk2rgb([c, m, y, k]: CMYKColor) {
-  const c_norm = clamp(c, COLOR_CONSTANTS.CMYK_MIN, COLOR_CONSTANTS.CMYK_MAX);
-  const m_norm = clamp(m, COLOR_CONSTANTS.CMYK_MIN, COLOR_CONSTANTS.CMYK_MAX);
-  const y_norm = clamp(y, COLOR_CONSTANTS.CMYK_MIN, COLOR_CONSTANTS.CMYK_MAX);
-  const k_norm = clamp(k, COLOR_CONSTANTS.CMYK_MIN, COLOR_CONSTANTS.CMYK_MAX);
+  const c_norm = clamp(c, COLOR_CONSTANTS.CMYK_MIN_PS, COLOR_CONSTANTS.CMYK_MAX_PS);
+  const m_norm = clamp(m, COLOR_CONSTANTS.CMYK_MIN_PS, COLOR_CONSTANTS.CMYK_MAX_PS);
+  const y_norm = clamp(y, COLOR_CONSTANTS.CMYK_MIN_PS, COLOR_CONSTANTS.CMYK_MAX_PS);
+  const k_norm = clamp(k, COLOR_CONSTANTS.CMYK_MIN_PS, COLOR_CONSTANTS.CMYK_MAX_PS);
   // console.log(`cmyk(${c_norm}, ${m_norm}, ${y_norm}, ${k_norm})`);
 
   const r_norm = (1 - c_norm) * (1 - k_norm);
@@ -109,8 +111,28 @@ function cmyk2rgb([c, m, y, k]: CMYKColor) {
   };
 }
 
-export { ryb2rgb, cmyk2rgb };
+function color2rgb([r, g, b]: RGBColor) {
+  const r_norm = clamp(r, COLOR_CONSTANTS.RGB_MIN_PS, COLOR_CONSTANTS.RGB_MAX_PS);
+  const g_norm = clamp(g, COLOR_CONSTANTS.RGB_MIN_PS, COLOR_CONSTANTS.RGB_MAX_PS);
+  const b_norm = clamp(b, COLOR_CONSTANTS.RGB_MIN_PS, COLOR_CONSTANTS.RGB_MAX_PS);
+  // console.log(`rgb(${r_norm}, ${g_norm}, ${b_norm})`);
+
+  const rr = Math.round(r_norm * COLOR_CONSTANTS.RGB_MAX);
+  const gg = Math.round(g_norm * COLOR_CONSTANTS.RGB_MAX);
+  const bb = Math.round(b_norm * COLOR_CONSTANTS.RGB_MAX);
+  // console.log(`rgb(${rr}, ${gg}, ${bb})`);
+  return {
+    toString: () => `rgb(${rr}, ${gg}, ${bb})`,
+    toArray: (): RGBColor => [r, g, b]
+  };
+}
+
+export { ryb2rgb, cmyk2rgb, color2rgb };
 export type { RGBColor, RYBColor, CMYKColor };
+
+// console.log(color2rgb([0.95, 0.83, 0.82]).toString());
+
+// rgb(242, 212, 209)
 
 // console.log(ryb2rgb([0.95, 0.83, 0.82]).toString());
 // console.log(ryb2rgb([0.95, 0.82, 0.83]).toString());
