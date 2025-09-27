@@ -1,6 +1,6 @@
 {
   "name": "ps2svg",
-  "version": "1.4.1",
+  "version": "2.0.1",
   "description": "Convert PostScript to SVG",
   "main": "./dist/ps2svg.js",
   "type": "module",
@@ -18,11 +18,13 @@
     "build": "npx tsc",
     "ryb2rgb": "npm run build && node ./dist/ryb2rgb.js",
     "ps2svg": "npm run build && node ./dist/ps2svg.js",
-    "prestart": "npm run build && npm run eslint",
+    "prestart": "npm run build && npm run prettier && npm run eslint",
     "start": "node ./dist/ps2svg.js",
     "prettier": "npx prettier --write .",
     "eslint": "npx eslint ./src --fix",
-    "prepublishOnly": "npm run prestart"
+    "prepublishOnly": "npm run prestart",
+    "v1": "npm run build && node ./dist/v1/ps2svg_v1.js",
+    "v2": "npm run build && node ./dist/v2/ps2svg_v2.js"
   },
   "engines": {
     "node": ">=24.8.0"
@@ -39,14 +41,14 @@
     "ps2svg"
   ],
   "devDependencies": {
+    "globals": "^16.4.0",
     "@types/node": "^24.5.2",
-    "@typescript-eslint/eslint-plugin": "^8.44.1",
-    "@typescript-eslint/parser": "^8.44.1",
-    "eslint": "^9.36.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
+    "typescript": "^5.9.2",
+    "@eslint/js": "^9.36.0",
+    "typescript-eslint": "^8.44.1",
     "prettier": "^3.6.2",
-    "typescript": "^5.9.2"
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4"
   },
   "types": "./dist/*.d.ts"
 }

@@ -1,3 +1,25 @@
 {
-  "cSpell.words": ["findfont", "github", "prestart", "Roboto", "setrgbcolor"]
+  "cSpell.words": [
+    "cmyk",
+    "eofill",
+    "findfont",
+    "grestore",
+    "gsave",
+    "imagemask",
+    "newpath",
+    "prestart",
+    "rcurveto",
+    "rlineto",
+    "rmoveto",
+    "scalefont",
+    "setcmykcolor",
+    "setdash",
+    "setfont",
+    "setgray",
+    "setlinecap",
+    "setlinejoin",
+    "setlinewidth",
+    "setrgbcolor",
+    "showpage"
+  ]
 }

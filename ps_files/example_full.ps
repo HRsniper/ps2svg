@@ -1,0 +1,161 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 400 400
+
+% --- Linha reta ---
+newpath
+50 50 moveto
+150 150 lineto
+stroke
+
+% --- Retângulo ---
+newpath
+200 50 moveto
+100 0 rlineto
+0 50 rlineto
+-100 0 rlineto
+closepath
+fill
+
+% --- Círculo ---
+newpath
+200 200 40 0 360 arc
+stroke
+
+% --- Elipse (via scale + arc) ---
+gsave
+300 200 translate
+80 40 scale
+0 0 1 0 360 arc
+stroke
+grestore
+
+% --- Polígono ---
+newpath
+50 250 moveto
+100 300 lineto
+150 250 lineto
+closepath
+stroke
+
+% --- Curva Bézier ---
+newpath
+50 350 moveto
+100 380 150 320 200 350 curveto
+stroke
+
+% --- Texto ---
+/Times-Roman findfont
+18 scalefont setfont
+100 370 moveto
+(Olá Mundo) show
+
+% --- Cor RGB ---
+0.2 0.6 0.8 setrgbcolor
+newpath
+250 300 30 0 360 arc
+fill
+
+% --- Cor Gray ---
+0.5 setgray
+newpath
+350 300 20 0 360 arc
+fill
+
+% --- Cor CMYK ---
+0 0.5 0.5 0 setcmykcolor
+newpath
+300 350 20 0 360 arc
+fill
+
+% --- Espessura e estilo de linha ---
+5 setlinewidth
+[4 2] 0 setdash
+newpath
+250 50 moveto
+350 150 lineto
+stroke
+
+% --- Transformações ---
+gsave
+100 100 translate
+45 rotate
+2 1 scale
+newpath
+0 0 30 0 360 arc
+stroke
+grestore
+
+% --- Imagem ---
+/drawImage {
+  4 dict begin
+  /x exch def
+  /y exch def
+  /w exch def
+  /h exch def
+
+  gsave
+  x y translate
+  w h scale
+
+  8 8 8                  % Define imagem 8x8, 8 bits por pixel
+  [8 0 0 -8 0 8]         % matriz de transformação
+  {
+    <00 33 66 99 CC FF FF CC
+      99 66 33 00 00 33 66 99
+      CC FF FF CC 99 66 33 00
+      00 33 66 99 CC FF FF CC
+      99 66 33 00 00 33 66 99
+      CC FF FF CC 99 66 33 00
+      00 33 66 99 CC FF FF CC
+      99 66 33 00 00 33 66 99>
+  } image
+
+  grestore
+  end
+} def
+
+100 200 50 50 drawImage
+
+% --- Gradiente (simulado com shfill) ---
+<< /ShadingType 2
+   /ColorSpace /DeviceRGB
+   /Coords [0 0 400 0]
+   /Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >>
+   /Extend [true true]
+>> shfill
+
+% --- Padrão (pattern fill simplificado) ---
+/Pattern setcolorspace
+% (definição de pattern omitida, apenas chamada)
+pattern setcolor
+newpath
+200 200 50 0 360 arc
+fill
+
+% --- Funções, definição e execução ---
+%% x y w h highlight
+/highlight {
+        4 dict begin
+        /h exch def
+        /w exch def
+        /y exch def
+        /x exch def
+        gsave
+        newpath
+        x y moveto
+        0 h rlineto     % up to left corner
+        w 0 rlineto     % to upper right corner
+        0 h neg rlineto % to lower right corner
+        w neg 0 rlineto % back home to lower left corner
+        closepath
+        .95 .83 .82 setrgbcolor
+        fill
+        grestore
+        end
+} def
+
+100 200 150 80 highlight
+
+% --- Fim do arquivo ---
+
+showpage

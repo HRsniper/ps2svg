@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <g transform="translate(0, 1080) scale(1,-1)">
+    <text transform="scale(1,-1)" x="100" y="-700" font-family="Times-Roman" font-size="24" fill="rgb(255, 0, 0)"
+      stroke="none">Texto em vermelho</text>
+    <text transform="scale(1,-1)" x="300" y="-700" font-family="Times-Roman" font-size="24" fill="rgb(255, 0, 0)"
+      stroke="none">Texto em vermelho CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-670" font-family="Times-Roman" font-size="24" fill="rgb(0, 255, 0)"
+      stroke="none">Texto em verde</text>
+    <text transform="scale(1,-1)" x="300" y="-670" font-family="Times-Roman" font-size="24" fill="rgb(0, 255, 0)"
+      stroke="none">Texto em verde CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-640" font-family="Times-Roman" font-size="24" fill="rgb(0, 0, 255)"
+      stroke="none">Texto em azul</text>
+    <text transform="scale(1,-1)" x="300" y="-640" font-family="Times-Roman" font-size="24" fill="rgb(0, 0, 255)"
+      stroke="none">Texto em azul CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-610" font-family="Times-Roman" font-size="24" fill="rgb(255, 255, 0)"
+      stroke="none">Texto em amarelo</text>
+    <text transform="scale(1,-1)" x="300" y="-610" font-family="Times-Roman" font-size="24" fill="rgb(255, 255, 0)"
+      stroke="none">Texto em amarelo CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-580" font-family="Times-Roman" font-size="24" fill="rgb(0, 255, 255)"
+      stroke="none">Texto em ciano</text>
+    <text transform="scale(1,-1)" x="300" y="-580" font-family="Times-Roman" font-size="24" fill="rgb(0, 255, 255)"
+      stroke="none">Texto em ciano CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-550" font-family="Times-Roman" font-size="24" fill="rgb(255, 0, 255)"
+      stroke="none">Texto em magenta</text>
+    <text transform="scale(1,-1)" x="300" y="-550" font-family="Times-Roman" font-size="24" fill="rgb(255, 0, 255)"
+      stroke="none">Texto em magenta CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-520" font-family="Times-Roman" font-size="24" fill="rgb(255, 128, 0)"
+      stroke="none">Texto em laranja</text>
+    <text transform="scale(1,-1)" x="300" y="-520" font-family="Times-Roman" font-size="24" fill="rgb(255, 128, 0)"
+      stroke="none">Texto em laranja CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-490" font-family="Times-Roman" font-size="24" fill="rgb(128, 0, 128)"
+      stroke="none">Texto em roxo</text>
+    <text transform="scale(1,-1)" x="300" y="-490" font-family="Times-Roman" font-size="24" fill="rgb(128, 0, 255)"
+      stroke="none">Texto em roxo CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-460" font-family="Times-Roman" font-size="24" fill="rgb(255, 128, 179)"
+      stroke="none">Texto em rosa</text>
+    <text transform="scale(1,-1)" x="300" y="-460" font-family="Times-Roman" font-size="24" fill="rgb(255, 128, 179)"
+      stroke="none">Texto em rosa CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-430" font-family="Times-Roman" font-size="24" fill="rgb(153, 77, 26)"
+      stroke="none">Texto em marrom</text>
+    <text transform="scale(1,-1)" x="300" y="-430" font-family="Times-Roman" font-size="24" fill="rgb(153, 77, 15)"
+      stroke="none">Texto em marrom CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-400" font-family="Times-Roman" font-size="24" fill="rgb(128, 128, 128)"
+      stroke="none">Texto em cinza</text>
+    <text transform="scale(1,-1)" x="300" y="-400" font-family="Times-Roman" font-size="24" fill="rgb(128, 128, 128)"
+      stroke="none">Texto em cinza CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-370" font-family="Times-Roman" font-size="24" fill="rgb(0, 0, 0)"
+      stroke="none">Texto em preto</text>
+    <text transform="scale(1,-1)" x="300" y="-370" font-family="Times-Roman" font-size="24" fill="rgb(0, 0, 0)"
+      stroke="none">Texto em preto CMYK</text>
+    <text transform="scale(1,-1)" x="100" y="-340" font-family="Times-Roman" font-size="24" fill="rgb(255, 255, 255)"
+      stroke="none">Texto em branco</text>
+    <text transform="scale(1,-1)" x="300" y="-340" font-family="Times-Roman" font-size="24" fill="rgb(255, 255, 255)"
+      stroke="none">Texto em branco CMYK</text>
+  </g>
+</svg>

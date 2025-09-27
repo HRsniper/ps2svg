@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 219 182" width="219" height="182">
+  <g transform="translate(0 182) scale(1 -1)">
+    <g id="highlight" transform="translate(0 16.088) scale(1 -1)">
+      <rect x="59.784" y="-66.176" width="76.525" height="16.088" fill="rgb(227, 194, 184)" />
+    </g>
+    <text transform="scale(1 -1)" x="60.784" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">&lt;missing ')'&gt;</text>
+    <path d="M132.262 165.440 L70.317 148.440" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="53.001" y="-38.088" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M70.317 132.352 L56.951 115.352" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="78.342" y="-104.264" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">\n</text>
+    <path d="M56.951 99.264 L15.856 82.264" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="178.092" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">*</text>
+    <path d="M56.951 99.264 L39.392 82.264" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="168.45" y="-104.264" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M39.392 66.176 L13.392 49.176" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="59.768" y="-137.352" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">stat</text>
+    <path d="M13.392 33.088 L13.392 16.088" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="27.001" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M39.392 66.176 L39.392 49.176" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="13.711" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">(</text>
+    <path d="M39.392 66.176 L65.393 49.176" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="1" y="-38.088" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M65.393 33.088 L65.393 16.088" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="34.783" y="-38.088" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">+</text>
+    <path d="M56.951 99.264 L98.046 82.264" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="149.704" y="-38.088" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">45</text>
+    <path d="M70.317 132.352 L83.683 115.352" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="194.489" y="-38.088" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">894</text>
+    <path d="M132.262 165.440 L194.208 148.440" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="202.233" y="-104.264" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">\n</text>
+    <path d="M194.208 132.352 L180.842 115.352" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="61.895" y="-5" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">2</text>
+    <path d="M180.842 99.264 L156.700 82.264" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="192.592" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M156.700 66.176 L156.700 49.176" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="144.309" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M180.842 99.264 L180.842 82.264" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="183.659" y="-137.352" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">stat</text>
+    <path d="M180.842 99.264 L204.983 82.264" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="119.651" y="-170.44" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">prog</text>
+    <path d="M204.983 66.176 L204.983 49.176" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="44.559" y="-104.264" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">expr</text>
+    <path d="M194.208 132.352 L207.574 115.352" fill="none" stroke="black" stroke-width="0.3" />
+    <text transform="scale(1 -1)" x="9.894" y="-5" font-family="ArialMT" font-size="11" fill="black"
+      stroke="none">1</text>
+  </g>
+</svg>
