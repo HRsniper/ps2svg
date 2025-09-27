@@ -682,8 +682,8 @@ function escapeXML(s: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
+    .replace(/'/g, "&#39;");
+  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
 }
 
 // Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)

@@ -29,7 +29,7 @@
       stroke="none">Texto em laranja</text>
     <text transform="scale(1,-1)" x="300" y="-520" font-family="Times-Roman" font-size="24" fill="rgb(255, 128, 0)"
       stroke="none">Texto em laranja CMYK</text>
-    <text transform="scale(1,-1)" x="100" y="-490" font-family="Times-Roman" font-size="24" fill="rgb(128, 0, 128)"
+    <text transform="scale(1,-1)" x="100" y="-490" font-family="Times-Roman" font-size="24" fill="rgb(128, 0, 255)"
       stroke="none">Texto em roxo</text>
     <text transform="scale(1,-1)" x="300" y="-490" font-family="Times-Roman" font-size="24" fill="rgb(128, 0, 255)"
       stroke="none">Texto em roxo CMYK</text>

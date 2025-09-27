@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 219 182" width="219" height="182">
   <g transform="translate(0 182) scale(1 -1)">
     <g id="highlight" transform="translate(0 16.088) scale(1 -1)">
-      <rect x="59.784" y="-66.176" width="76.525" height="16.088" fill="rgb(227, 194, 184)" />
+      <rect x="59.784" y="-66.176" width="76.525" height="16.088" fill="rgb(242, 212, 209)" />
     </g>
     <text transform="scale(1 -1)" x="60.784" y="-71.176" font-family="ArialMT" font-size="11" fill="black"
       stroke="none">&lt;missing ')'&gt;</text>
