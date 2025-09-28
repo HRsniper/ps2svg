@@ -2,6 +2,7 @@ import * as child_process from "node:child_process";
 import * as path from "node:path";
 import * as process from "node:process";
 import * as fs from "node:fs";
+import { convertSvgToFile } from "./ps2svg_v2.js";
 
 type CLI_RESULT = {
   fileInputName: string;
@@ -13,6 +14,13 @@ type FILE_PATH = {
   output: string;
 };
 
+function makeOutputFolder(outputFolder: string) {
+  if (!fs.existsSync(outputFolder)) {
+    console.log(`Creating output folder: ${outputFolder}`);
+    fs.mkdirSync(outputFolder);
+  }
+}
+
 function printUsageAndExit() {
   console.log(`
   - <> indicates a required argument. The ".ps" extension is optional.
@@ -20,24 +28,22 @@ function printUsageAndExit() {
   (Accepts any variation of -findAll, -findall, -FINDALL, -FindAll, -FiNdAlL, same for -batch)
 Usage:
   ps2svg <input.ps> [output.svg]
-  ps2svg -f | -findall [directory]
-  ps2svg -b | -batch <folder> [outputFolder]
+  ps2svg <input.ps> [output.svg] [outputFolder]
+  ps2svg -f | -findall [folder]
+  ps2svg -b | -batch   <folder>  [outputFolder]
 
 Examples:
-  ps2svg -findAll
-      → Lists all .ps files found recursively
+  ps2svg -findAll                        ps2svg -findAll ps_files
+    → Lists all .ps                        → Lists all .ps in "./ps_files"
 
-  ps2svg path/to/my_ps.ps
-      → Generates "path/to/my_ps.svg"
+  ps2svg my_ps                           ps2svg path/to/my_ps.ps
+    → Generates "my_ps.svg"                → Generates "path/to/my_ps.svg"
 
-  ps2svg my_ps
-      → Generates "my_ps.svg"
+  ps2svg my_ps.ps new_svg.svg            ps2svg my_ps.ps new_svg.svg new_folder
+    → Generates "new_svg.svg"              → Generates "new_svg.svg" to "./new_folder"
 
-  ps2svg my_ps.ps new_svg.svg
-      → Generates "new_svg.svg"
-
-  ps2svg --batch docs --out svgs
-      → Convert all .ps in ./docs to ./svgs
+  ps2svg -batch ps_files                 ps2svg -batch ps_files svgs
+    → Convert all .ps in "./ps_files"      → Convert all .ps in "./ps_files" to "./svgs"
 `);
   process.exit(1);
 }
@@ -57,6 +63,16 @@ function normalizeOutput(input: string, output?: string, outputFolder?: string):
 
   const outputWithoutExt = output.replace(/\.svg$/i, "");
   // console.log("withoutExt", outputWithoutExt);
+
+  if (outputFolder) {
+    const outputFilePathRelative = path.join(outputFolder, outputWithoutExt);
+    // console.log("outputFilePathRelative", outputFilePathRelative);
+    makeOutputFolder(outputFolder);
+    const outputFilePathAbsolute = path.resolve(outputFilePathRelative);
+    // console.log("outputFilePathAbsolute", outputFilePathAbsolute);
+    return outputFilePathAbsolute;
+  }
+
   const inputDirectory = path.dirname(input);
   // console.log("inputDirectory", inputDirectory);
   const outputFilePathRelative = path.join(inputDirectory, outputWithoutExt);
@@ -85,16 +101,24 @@ function findAllPostscriptFiles(folder?: string): string[] {
 function isFindAllFlag(arg: string): boolean {
   const normalized = arg.toLowerCase();
   // console.log("flag", normalized);
-  return normalized === "-f" || normalized === "-findall";
+  const validFlags = ["-f", "-findall"];
+  if (validFlags.includes(normalized)) {
+    return true;
+  }
+  return false;
 }
 
 function isBatchFlag(arg: string): boolean {
   const normalized = arg.toLowerCase();
   // console.log("flag", normalized);
-  return normalized === "-b" || normalized === "-batch";
+  const validFlags = ["-b", "-batch"];
+  if (validFlags.includes(normalized)) {
+    return true;
+  }
+  return false;
 }
 
-function convertFile(input: string, output?: string): FILE_PATH {
+function convertFile(input: string, output?: string, outputFolder?: string): FILE_PATH {
   const inputNorm = normalizeInput(input);
 
   if (!fs.existsSync(`${inputNorm}.ps`)) {
@@ -102,24 +126,35 @@ function convertFile(input: string, output?: string): FILE_PATH {
     process.exit(1);
   }
 
-  const outputNorm = normalizeOutput(inputNorm, output);
+  const outputNorm = normalizeOutput(inputNorm, output, outputFolder);
 
   console.log(`Converting ${inputNorm}.ps to ${outputNorm}.svg`);
+  convertSvgToFile(inputNorm, outputNorm);
   return { input: inputNorm, output: outputNorm };
 }
 
 function convertBatch(folder: string, outputFolder?: string) {
   const files = findAllPostscriptFiles(folder);
   if (files.length === 0) {
-    console.log("No .ps files found.");
+    console.log(`No .ps files found in ${folder}`);
     process.exit(1);
   }
-  console.log(`Converting ${files.length} .ps files...`);
-  files.forEach((file) => convertFile(file));
+
+  if (outputFolder) {
+    console.log(`Converting ${files.length} .ps files to ${outputFolder}`);
+    files.forEach((file) => convertFile(file, undefined, outputFolder));
+    process.exit(0);
+  } else {
+    console.log(`Converting ${files.length} .ps files...`);
+    files.forEach((file) => convertFile(file));
+    process.exit(0);
+  }
 }
 
 function cli(argv: string[]): CLI_RESULT {
-  console.log("argv", argv);
+  // console.log("argv", argv);
+  // console.log("isFindAllFlag(argv[0])", isFindAllFlag(argv[0]));
+  // console.log("isBatchFlag(argv[0])", isBatchFlag(argv[0]));
 
   if (argv.length < 1 || argv.length > 3) {
     printUsageAndExit();
@@ -135,6 +170,10 @@ function cli(argv: string[]): CLI_RESULT {
     process.exit(0);
   }
 
+  if (argv.length === 3 && isFindAllFlag(argv[0])) {
+    printUsageAndExit();
+  }
+
   if (argv.length === 1 && isBatchFlag(argv[0])) {
     printUsageAndExit();
   }
@@ -147,6 +186,11 @@ function cli(argv: string[]): CLI_RESULT {
   if (argv.length === 3 && isBatchFlag(argv[0])) {
     convertBatch(argv[1], argv[2]);
     process.exit(0);
+  }
+
+  if (argv.length === 3 && !isFindAllFlag(argv[0]) && !isBatchFlag(argv[0])) {
+    const { input, output } = convertFile(argv[0], argv[1], argv[2]);
+    return { fileInputName: input, fileOutputName: output };
   }
 
   const { input, output } = convertFile(argv[0], argv[1]);
