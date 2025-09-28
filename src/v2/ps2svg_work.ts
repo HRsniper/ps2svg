@@ -1,10 +1,104 @@
-console.time("execução");
-
 import * as fs from "node:fs";
+import { cmyk2rgb, color2rgb } from "../color2rgb.js";
 import { fileInputName, fileOutputName } from "./cli.js";
-import { ryb2rgb, cmyk2rgb, color2rgb } from "../color2rgb.js";
+
+console.time("Execution time");
 
 type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
+
+interface GraphicState {
+  ctm: Matrix;
+  fill: string | null;
+  stroke: string | null;
+  strokeWidth: number;
+  lineCap: "butt" | "round" | "square";
+  lineJoin: "miter" | "round" | "bevel";
+  font: string;
+  fontSize: number;
+  clipStack: string[];
+  dash: string | null;
+  lastTextPos: { x: number; y: number } | null;
+}
+
+class Matrix {
+  a = 1;
+  b = 0;
+  c = 0;
+  d = 1;
+  e = 0;
+  f = 0;
+
+  multiply(m: Matrix): Matrix {
+    const r = new Matrix();
+    r.a = this.a * m.a + this.c * m.b;
+    r.b = this.b * m.a + this.d * m.b;
+    r.c = this.a * m.c + this.c * m.d;
+    r.d = this.b * m.c + this.d * m.d;
+    r.e = this.a * m.e + this.c * m.f + this.e;
+    r.f = this.b * m.e + this.d * m.f + this.f;
+    return r;
+  }
+
+  translate(tx: number, ty: number): Matrix {
+    return this.multiply(Object.assign(new Matrix(), { e: tx, f: ty }));
+  }
+
+  scale(sx: number, sy: number): Matrix {
+    return this.multiply(Object.assign(new Matrix(), { a: sx, d: sy }));
+  }
+
+  rotate(deg: number): Matrix {
+    const r = (deg * Math.PI) / 180;
+    const m = new Matrix();
+    m.a = Math.cos(r);
+    m.b = Math.sin(r);
+    m.c = -Math.sin(r);
+    m.d = Math.cos(r);
+    return this.multiply(m);
+  }
+
+  applyPoint(x: number, y: number): { x: number; y: number } {
+    return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
+  }
+
+  invert(): Matrix {
+    const det = this.a * this.d - this.b * this.c;
+    if (Math.abs(det) < 1e-10) return new Matrix();
+    const inv = new Matrix();
+    inv.a = this.d / det;
+    inv.b = -this.b / det;
+    inv.c = -this.c / det;
+    inv.d = this.a / det;
+    inv.e = (this.c * this.f - this.d * this.e) / det;
+    inv.f = (this.b * this.e - this.a * this.f) / det;
+    return inv;
+  }
+}
+
+class PathBuilder {
+  parts: string[] = [];
+  moveTo(x: number, y: number) {
+    this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
+  }
+  lineTo(x: number, y: number) {
+    this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
+  }
+  curveTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
+    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x3)} ${numFmt(y3)}`);
+  }
+  close() {
+    this.parts.push("Z");
+  }
+  toPath(): string {
+    return this.parts.join(" ");
+  }
+  length(): number {
+    return this.parts.length;
+  }
+  clear() {
+    this.parts = [];
+  }
+}
 
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " "); // Remove comments
@@ -156,75 +250,6 @@ function parseProcedure(tokens: Token[], startIndex: number): { proc: Token[]; n
   return { proc, nextIndex: i };
 }
 
-class Matrix {
-  a = 1;
-  b = 0;
-  c = 0;
-  d = 1;
-  e = 0;
-  f = 0;
-
-  multiply(m: Matrix): Matrix {
-    const r = new Matrix();
-    r.a = this.a * m.a + this.c * m.b;
-    r.b = this.b * m.a + this.d * m.b;
-    r.c = this.a * m.c + this.c * m.d;
-    r.d = this.b * m.c + this.d * m.d;
-    r.e = this.a * m.e + this.c * m.f + this.e;
-    r.f = this.b * m.e + this.d * m.f + this.f;
-    return r;
-  }
-
-  translate(tx: number, ty: number): Matrix {
-    return this.multiply(Object.assign(new Matrix(), { e: tx, f: ty }));
-  }
-
-  scale(sx: number, sy: number): Matrix {
-    return this.multiply(Object.assign(new Matrix(), { a: sx, d: sy }));
-  }
-
-  rotate(deg: number): Matrix {
-    const r = (deg * Math.PI) / 180;
-    const m = new Matrix();
-    m.a = Math.cos(r);
-    m.b = Math.sin(r);
-    m.c = -Math.sin(r);
-    m.d = Math.cos(r);
-    return this.multiply(m);
-  }
-
-  applyPoint(x: number, y: number): { x: number; y: number } {
-    return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
-  }
-
-  invert(): Matrix {
-    const det = this.a * this.d - this.b * this.c;
-    if (Math.abs(det) < 1e-10) return new Matrix();
-    const inv = new Matrix();
-    inv.a = this.d / det;
-    inv.b = -this.b / det;
-    inv.c = -this.c / det;
-    inv.d = this.a / det;
-    inv.e = (this.c * this.f - this.d * this.e) / det;
-    inv.f = (this.b * this.e - this.a * this.f) / det;
-    return inv;
-  }
-}
-
-interface GraphicState {
-  ctm: Matrix;
-  fill: string | null;
-  stroke: string | null;
-  strokeWidth: number;
-  lineCap: "butt" | "round" | "square";
-  lineJoin: "miter" | "round" | "bevel";
-  font: string;
-  fontSize: number;
-  clipStack: string[];
-  dash: string | null;
-  lastTextPos: { x: number; y: number } | null;
-}
-
 const DEFAULT_GSTATE: GraphicState = {
   ctm: new Matrix(),
   fill: null,
@@ -253,31 +278,6 @@ function cloneG(s: GraphicState): GraphicState {
     dash: s.dash ?? null,
     lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null
   };
-}
-
-class PathBuilder {
-  parts: string[] = [];
-  moveTo(x: number, y: number) {
-    this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
-  }
-  lineTo(x: number, y: number) {
-    this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
-  }
-  curveTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
-    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x3)} ${numFmt(y3)}`);
-  }
-  close() {
-    this.parts.push("Z");
-  }
-  toPath(): string {
-    return this.parts.join(" ");
-  }
-  length(): number {
-    return this.parts.length;
-  }
-  clear() {
-    this.parts = [];
-  }
 }
 
 function numFmt(n: number): string {
@@ -902,7 +902,7 @@ function extractBoundingBox(ps: string) {
   return m ? { llx: Number(m[1]), lly: Number(m[2]), urx: Number(m[3]), ury: Number(m[4]) } : null;
 }
 
-export function convertPostscriptToSVG(psText: string): string {
+function convertPostscriptToSVG(psText: string): string {
   const bBox = extractBoundingBox(psText);
   const tokens = tokenize(psText);
   const svgOut = { defs: [] as string[], elementShapes: [] as string[], elementTexts: [] as string[] };
@@ -928,12 +928,15 @@ export function convertPostscriptToSVG(psText: string): string {
   return `<?xml version="1.0" encoding="utf-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" ${viewBoxAttr}>\n${defs}\n${body}\n</svg>`;
 }
 
-export function convertToFile(inPath: string, outPath: string) {
+function convertSvgToFile(inPath: string, outPath: string) {
   const file = fs.readFileSync(`${inPath}.ps`, "utf8");
   const svg = convertPostscriptToSVG(file);
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
   console.log(`Converted: ${inPath} -> ${outPath}.svg`);
 }
 
-convertToFile(fileInputName, fileOutputName);
-console.timeEnd("execução");
+convertSvgToFile(fileInputName, fileOutputName);
+
+console.timeEnd("Execution time");
+
+export { convertPostscriptToSVG, convertSvgToFile };
