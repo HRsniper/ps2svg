@@ -194,12 +194,12 @@ interface GraphicState {
   fill: string | null;
   stroke: string | null;
   strokeWidth?: number;
-  lineCap: "butt" | "round" | "square";
-  lineJoin: "miter" | "round" | "bevel" | "arcs";
+  lineCap?: "butt" | "round" | "square" | null;
+  lineJoin?: "miter" | "round" | "bevel" | "arcs" | null;
   font: string;
   fontSize: number;
   clipStack: string[];
-  dash: string | null;
+  dash?: string | null;
   lastTextPos: { x: number; y: number } | null;
 }
 
@@ -373,10 +373,10 @@ function cloneGraphic(s: GraphicState): GraphicState {
     fill: s.fill,
     stroke: s.stroke,
     strokeWidth: s.strokeWidth ?? 1,
-    lineCap: s.lineCap,
-    lineJoin: s.lineJoin,
+    lineCap: s.lineCap ?? null,
+    lineJoin: s.lineJoin ?? null,
     font: s.font,
-    fontSize: s.fontSize,
+    fontSize: s.fontSize ?? 12,
     clipStack: [...s.clipStack],
     dash: s.dash ?? null,
     lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null

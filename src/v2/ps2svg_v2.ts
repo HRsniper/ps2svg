@@ -193,14 +193,14 @@ interface GraphicState {
   ctm: Matrix;
   fill: string | null;
   stroke: string | null;
-  strokeWidth: number;
-  lineCap: string;
-  lineJoin: string;
+  strokeWidth?: number;
+  lineCap?: string | null;
+  lineJoin?: string | null;
   font: string;
   fontSize: number;
   clipStack: string[];
   dash?: string | null;
-  lastTextPos?: { x: number; y: number } | null;
+  lastTextPos: { x: number; y: number } | null;
 }
 
 function tokenize(ps: string): Token[] {
@@ -284,16 +284,16 @@ function parseProcedure(tokens: Token[], startIndex: number): { proc: Token[]; n
   return { proc, nextIndex: i };
 }
 
-function cloneG(s: GraphicState): GraphicState {
+function cloneGraphic(s: GraphicState): GraphicState {
   return {
     ctm: Object.assign(new Matrix(), s.ctm),
     fill: s.fill,
     stroke: s.stroke,
-    strokeWidth: s.strokeWidth,
-    lineCap: s.lineCap,
-    lineJoin: s.lineJoin,
+    strokeWidth: s.strokeWidth ?? 1,
+    lineCap: s.lineCap ?? null,
+    lineJoin: s.lineJoin ?? null,
     font: s.font,
-    fontSize: s.fontSize,
+    fontSize: s.fontSize ?? 12,
     clipStack: [...s.clipStack],
     dash: s.dash ?? null,
     lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null
@@ -668,7 +668,7 @@ function interpret(
         continue;
       }
       if (op === "gsave") {
-        gStack.push(cloneG(gState));
+        gStack.push(cloneGraphic(gState));
         continue;
       }
       if (op === "grestore") {
