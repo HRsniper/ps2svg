@@ -41,6 +41,20 @@ class Matrix {
     return this.multiply(m);
   }
 
+  skewX(angle: number): Matrix {
+    const rad = (angle * Math.PI) / 180;
+    return this.multiply(Object.assign(new Matrix(), { c: Math.tan(rad) }));
+  }
+
+  skewY(angle: number): Matrix {
+    const rad = (angle * Math.PI) / 180;
+    return this.multiply(Object.assign(new Matrix(), { b: Math.tan(rad) }));
+  }
+
+  toTransformString(): string {
+    return `matrix(${this.a} ${this.b} ${this.c} ${this.d} ${this.e} ${this.f})`;
+  }
+
   applyPoint(x: number, y: number): { x: number; y: number } {
     return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
   }
@@ -284,7 +298,7 @@ const DEFAULT_GSTATE: GraphicState = {
   lastTextPos: null
 };
 
-function cloneG(s: GraphicState): GraphicState {
+function cloneGraphic(s: GraphicState): GraphicState {
   return {
     ctm: Object.assign(new Matrix(), s.ctm),
     fill: s.fill,
@@ -659,7 +673,7 @@ function interpret(
       gState.ctm = gState.ctm.rotate(ang);
     },
     gsave: () => {
-      gStack.push(cloneG(gState));
+      gStack.push(cloneGraphic(gState));
     },
     grestore: () => {
       const st = gStack.pop();
