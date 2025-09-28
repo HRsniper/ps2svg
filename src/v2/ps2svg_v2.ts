@@ -11,7 +11,8 @@ class Matrix {
   d = 1;
   e = 0;
   f = 0;
-  multiply(m: Matrix) {
+
+  multiply(m: Matrix): Matrix {
     const r = new Matrix();
     r.a = this.a * m.a + this.c * m.b;
     r.b = this.b * m.a + this.d * m.b;
@@ -21,13 +22,16 @@ class Matrix {
     r.f = this.b * m.e + this.d * m.f + this.f;
     return r;
   }
-  translate(tx: number, ty: number) {
+
+  translate(tx: number, ty: number): Matrix {
     return this.multiply(Object.assign(new Matrix(), { e: tx, f: ty }));
   }
-  scale(sx: number, sy: number) {
+
+  scale(sx: number, sy: number): Matrix {
     return this.multiply(Object.assign(new Matrix(), { a: sx, d: sy }));
   }
-  rotate(deg: number) {
+
+  rotate(deg: number): Matrix {
     const r = (deg * Math.PI) / 180;
     const m = new Matrix();
     m.a = Math.cos(r);
@@ -36,11 +40,67 @@ class Matrix {
     m.d = Math.cos(r);
     return this.multiply(m);
   }
+
+  skewX(angle: number): Matrix {
+    const rad = (angle * Math.PI) / 180;
+    return this.multiply(Object.assign(new Matrix(), { c: Math.tan(rad) }));
+  }
+
+  skewY(angle: number): Matrix {
+    const rad = (angle * Math.PI) / 180;
+    return this.multiply(Object.assign(new Matrix(), { b: Math.tan(rad) }));
+  }
+
+  toTransformString() {
+    return `matrix(${this.a} ${this.b} ${this.c} ${this.d} ${this.e} ${this.f})`;
+  }
+
   applyPoint(x: number, y: number) {
     return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
   }
-}
 
+  decompose(): {
+    translate: { x: number; y: number };
+    scale: { x: number; y: number };
+    rotate: number;
+    skew: { x: number; y: number };
+  } {
+    const { a, b, c, d, e, f } = this;
+
+    const translate = { x: e, y: f };
+
+    const scaleX = Math.hypot(a, b);
+    const scaleY = (a * d - b * c) / scaleX; // preserve aspect
+
+    const rotation = Math.atan2(b, a) * (180 / Math.PI); // in degrees (0-360)°
+
+    const skewX = Math.atan2(a * c + b * d, scaleX * scaleX);
+    const skewY = Math.atan2(a * b + c * d, scaleY * scaleY);
+
+    return {
+      translate,
+      scale: { x: scaleX, y: scaleY },
+      rotate: rotation,
+      skew: {
+        x: skewX * (180 / Math.PI), // in degrees (0-360)°
+        y: skewY * (180 / Math.PI) // in degrees (0-360)°
+      }
+    };
+  }
+
+  invert(): Matrix {
+    const det = this.a * this.d - this.b * this.c;
+    if (Math.abs(det) < 1e-10) return new Matrix();
+    const inv = new Matrix();
+    inv.a = this.d / det;
+    inv.b = -this.b / det;
+    inv.c = -this.c / det;
+    inv.d = this.a / det;
+    inv.e = (this.c * this.f - this.d * this.e) / det;
+    inv.f = (this.b * this.e - this.a * this.f) / det;
+    return inv;
+  }
+}
 class PathBuilder {
   parts: string[] = [];
   moveTo(x: number, y: number) {

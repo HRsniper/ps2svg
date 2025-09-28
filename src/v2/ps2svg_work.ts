@@ -51,12 +51,41 @@ class Matrix {
     return this.multiply(Object.assign(new Matrix(), { b: Math.tan(rad) }));
   }
 
-  toTransformString(): string {
+  toTransformString() {
     return `matrix(${this.a} ${this.b} ${this.c} ${this.d} ${this.e} ${this.f})`;
   }
 
-  applyPoint(x: number, y: number): { x: number; y: number } {
+  applyPoint(x: number, y: number) {
     return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
+  }
+
+  decompose(): {
+    translate: { x: number; y: number };
+    scale: { x: number; y: number };
+    rotate: number;
+    skew: { x: number; y: number };
+  } {
+    const { a, b, c, d, e, f } = this;
+
+    const translate = { x: e, y: f };
+
+    const scaleX = Math.hypot(a, b);
+    const scaleY = (a * d - b * c) / scaleX; // preserve aspect
+
+    const rotation = Math.atan2(b, a) * (180 / Math.PI); // in degrees (0-360)°
+
+    const skewX = Math.atan2(a * c + b * d, scaleX * scaleX);
+    const skewY = Math.atan2(a * b + c * d, scaleY * scaleY);
+
+    return {
+      translate,
+      scale: { x: scaleX, y: scaleY },
+      rotate: rotation,
+      skew: {
+        x: skewX * (180 / Math.PI), // in degrees (0-360)°
+        y: skewY * (180 / Math.PI) // in degrees (0-360)°
+      }
+    };
   }
 
   invert(): Matrix {
