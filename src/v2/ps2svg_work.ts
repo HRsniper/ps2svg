@@ -205,69 +205,71 @@ interface GraphicState {
 
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " "); // Remove comments
-  const numRe = /-?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][+-]?\d+)?/y;
-  const stringRe = /\((?:\\.|[^\\\)])*\)/y;
-  const nameRe = /\/?[A-Za-z_\-\.\?\*][A-Za-z0-9_\-\.\?\*]*/y;
+  const numRe = /-?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][+-]?\d+)?/y; // 12 .2 3e4
+  const stringRe = /\((?:\\.|[^\\\)])*\)/y; // (foo) (a\)b)
+  const nameRe = /\/?[A-Za-z_\-\.\?\*][A-Za-z0-9_\-\.\?\*]*/y; //  name /foo /foo-bar
   const braceRe = /[\{\}]/y;
   const whitespaceRe = /\s*/y;
 
   const tokens: Token[] = [];
-  let i = 0;
-  while (i < ps.length) {
-    whitespaceRe.lastIndex = i;
+  let index = 0;
+
+  while (index < ps.length) {
+    whitespaceRe.lastIndex = index;
     const ws = whitespaceRe.exec(ps);
-    if (ws) i = whitespaceRe.lastIndex;
-    if (i >= ps.length) break;
+    if (ws) index = whitespaceRe.lastIndex;
+    if (index >= ps.length) break;
 
     // Strings first (highest priority)
-    stringRe.lastIndex = i;
-    let m = stringRe.exec(ps);
-    if (m) {
-      const raw = unescapePSString(m[0].slice(1, -1));
+    stringRe.lastIndex = index;
+    let match = stringRe.exec(ps);
+    if (match) {
+      const raw = unescapePostscriptString(match[0].slice(1, -1));
       tokens.push({ type: "string", value: raw });
-      i = stringRe.lastIndex;
+      index = stringRe.lastIndex;
       continue;
     }
 
     // Numbers
-    numRe.lastIndex = i;
-    m = numRe.exec(ps);
-    if (m) {
-      tokens.push({ type: "number", value: m[0] });
-      i = numRe.lastIndex;
+    numRe.lastIndex = index;
+    match = numRe.exec(ps);
+    if (match) {
+      tokens.push({ type: "number", value: match[0] });
+      index = numRe.lastIndex;
       continue;
     }
 
     // Braces
-    braceRe.lastIndex = i;
-    m = braceRe.exec(ps);
-    if (m) {
-      tokens.push({ type: "brace", value: m[0] });
-      i = braceRe.lastIndex;
+    braceRe.lastIndex = index;
+    match = braceRe.exec(ps);
+    if (match) {
+      tokens.push({ type: "brace", value: match[0] });
+      index = braceRe.lastIndex;
       continue;
     }
 
     // Names/Operators
-    nameRe.lastIndex = i;
-    m = nameRe.exec(ps);
-    if (m) {
-      const v = m[0];
-      if (v.startsWith("/")) tokens.push({ type: "name", value: v.slice(1) });
-      else tokens.push({ type: "operator", value: v });
-      i = nameRe.lastIndex;
+    nameRe.lastIndex = index;
+    match = nameRe.exec(ps);
+    if (match) {
+      const value = match[0];
+      if (value.startsWith("/")) tokens.push({ type: "name", value: value.slice(1) });
+      else tokens.push({ type: "operator", value: value });
+      index = nameRe.lastIndex;
       continue;
     }
 
     // Skip invalid char
-    i += 1;
+    index += 1;
   }
   return tokens;
 }
 
-// Fixed PS string unescaping: Char-by-char loop for precise handling (per PLRM)
-function unescapePSString(str: string): string {
+// PS string unescaping: Char-by-char loop for precise handling (per PLRM)
+function unescapePostscriptString(str: string): string {
   let result = "";
   let i = 0;
+
   while (i < str.length) {
     if (str[i] !== "\\") {
       result += str[i];

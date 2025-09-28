@@ -228,6 +228,7 @@ function tokenize(ps: string): Token[] {
         if (g === "t") return "\t";
         return g;
       });
+      // const raw = unescapePostscriptString(match[0].slice(1, -1));
       tokens.push({ type: "string", value: raw });
       i = stringRe.lastIndex;
       continue;
