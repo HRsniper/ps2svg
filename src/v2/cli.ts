@@ -3,20 +3,28 @@ import * as path from "node:path";
 import * as process from "node:process";
 import * as fs from "node:fs";
 
-interface CliResult {
+type CLI_RESULT = {
   fileInputName: string;
   fileOutputName: string;
-}
+};
+
+type FILE_PATH = {
+  input: string;
+  output: string;
+};
 
 function printUsageAndExit() {
   console.log(`
   - <> indicates a required argument. The ".ps" extension is optional.
   - [] indicates an optional argument. The ".svg" extension is optional.
+  (Accepts any variation of -findAll, -findall, -FINDALL, -FindAll, -FiNdAlL, same for -batch)
 Usage:
-  ps2svg [options] <input.ps> [output.svg]
+  ps2svg <input.ps> [output.svg]
+  ps2svg -f | -findall [directory]
+  ps2svg -b | -batch <folder> [outputFolder]
 
 Examples:
-  ps2svg findAll (Accepts any variation of findAll, findall, FINDALL, FindAll, FiNdAlL)
+  ps2svg -findAll
       → Lists all .ps files found recursively
 
   ps2svg path/to/my_ps.ps
@@ -27,6 +35,9 @@ Examples:
 
   ps2svg my_ps.ps new_svg.svg
       → Generates "new_svg.svg"
+
+  ps2svg --batch docs --out svgs
+      → Convert all .ps in ./docs to ./svgs
 `);
   process.exit(1);
 }
@@ -39,7 +50,7 @@ function normalizeInput(input: string): string {
   return inputFilePathAbsolute;
 }
 
-function normalizeOutput(input: string, output?: string): string {
+function normalizeOutput(input: string, output?: string, outputFolder?: string): string {
   const inputName = path.basename(input);
   // console.log("inputName", inputName);
   if (!output) output = inputName;
@@ -55,40 +66,90 @@ function normalizeOutput(input: string, output?: string): string {
   return outputFilePathAbsolute;
 }
 
-function findAllPostscriptFiles(): string[] {
+function findAllPostscriptFiles(folder?: string): string[] {
   if (process.platform === "win32") {
     const shellResultWin = child_process.spawnSync("powershell.exe", [
       "-NoProfile",
       "-Command",
-      "Get-ChildItem -Recurse -Filter *.ps | Select-Object -ExpandProperty FullName"
+      `Get-ChildItem -Recurse -Filter *.ps -Path "${folder ? folder : "."}" | Select-Object -ExpandProperty FullName`
     ]);
     const filePathsWin = shellResultWin.stdout.toString().trim().split(/\r?\n/).filter(Boolean);
     return filePathsWin;
   } else {
-    const shellResultUnix = child_process.spawnSync("find", [".", "-name", "*.ps"]);
+    const shellResultUnix = child_process.spawnSync("find", [folder ? folder : ".", "-name", "*.ps"]);
     const filePathsUnix = shellResultUnix.stdout.toString().trim().split("\n").filter(Boolean);
     return filePathsUnix;
   }
 }
 
-function cli(argv: string[]): CliResult {
-  if (argv.length < 1 || argv.length > 2) {
+function isFindAllFlag(arg: string): boolean {
+  const normalized = arg.toLowerCase();
+  // console.log("flag", normalized);
+  return normalized === "-f" || normalized === "-findall";
+}
+
+function isBatchFlag(arg: string): boolean {
+  const normalized = arg.toLowerCase();
+  // console.log("flag", normalized);
+  return normalized === "-b" || normalized === "-batch";
+}
+
+function convertFile(input: string, output?: string): FILE_PATH {
+  const inputNorm = normalizeInput(input);
+
+  if (!fs.existsSync(`${inputNorm}.ps`)) {
+    console.error(`File not found: ${inputNorm}.ps`);
+    process.exit(1);
+  }
+
+  const outputNorm = normalizeOutput(inputNorm, output);
+
+  console.log(`Converting ${inputNorm}.ps to ${outputNorm}.svg`);
+  return { input: inputNorm, output: outputNorm };
+}
+
+function convertBatch(folder: string, outputFolder?: string) {
+  const files = findAllPostscriptFiles(folder);
+  if (files.length === 0) {
+    console.log("No .ps files found.");
+    process.exit(1);
+  }
+  console.log(`Converting ${files.length} .ps files...`);
+  files.forEach((file) => convertFile(file));
+}
+
+function cli(argv: string[]): CLI_RESULT {
+  console.log("argv", argv);
+
+  if (argv.length < 1 || argv.length > 3) {
     printUsageAndExit();
   }
 
-  if (argv.length === 1 && argv[0].toLowerCase() === "findall") {
+  if (argv.length === 1 && isFindAllFlag(argv[0])) {
     console.log(findAllPostscriptFiles());
     process.exit(0);
   }
 
-  const input = normalizeInput(argv[0]);
-
-  if (!fs.existsSync(`${input}.ps`)) {
-    console.error(`File not found: ${input}.ps`);
-    process.exit(1);
+  if (argv.length === 2 && isFindAllFlag(argv[0])) {
+    console.log(findAllPostscriptFiles(argv[1]));
+    process.exit(0);
   }
 
-  const output = normalizeOutput(input, argv[1]);
+  if (argv.length === 1 && isBatchFlag(argv[0])) {
+    printUsageAndExit();
+  }
+
+  if (argv.length === 2 && isBatchFlag(argv[0])) {
+    convertBatch(argv[1]);
+    process.exit(0);
+  }
+
+  if (argv.length === 3 && isBatchFlag(argv[0])) {
+    convertBatch(argv[1], argv[2]);
+    process.exit(0);
+  }
+
+  const { input, output } = convertFile(argv[0], argv[1]);
 
   return { fileInputName: input, fileOutputName: output };
 }
