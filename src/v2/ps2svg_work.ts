@@ -4,22 +4,6 @@ import { fileInputName, fileOutputName } from "./cli.js";
 
 console.time("Execution time");
 
-type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
-
-interface GraphicState {
-  ctm: Matrix;
-  fill: string | null;
-  stroke: string | null;
-  strokeWidth: number;
-  lineCap: "butt" | "round" | "square";
-  lineJoin: "miter" | "round" | "bevel";
-  font: string;
-  fontSize: number;
-  clipStack: string[];
-  dash: string | null;
-  lastTextPos: { x: number; y: number } | null;
-}
-
 class Matrix {
   a = 1;
   b = 0;
@@ -83,8 +67,28 @@ class PathBuilder {
   lineTo(x: number, y: number) {
     this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
   }
-  curveTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
-    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x3)} ${numFmt(y3)}`);
+  horizontalLineTo(x: number) {
+    this.parts.push(`H ${numFmt(x)}`);
+  }
+  verticalLineTo(y: number) {
+    this.parts.push(`V ${numFmt(y)}`);
+  }
+  curveTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
+    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
+  }
+  smoothCurveTo(x2: number, y2: number, x: number, y: number) {
+    this.parts.push(`S ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
+  }
+  quadraticCurveTo(x1: number, y1: number, x: number, y: number) {
+    this.parts.push(`Q ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x)} ${numFmt(y)}`);
+  }
+  smoothQuadraticCurveTo(x: number, y: number) {
+    this.parts.push(`T ${numFmt(x)} ${numFmt(y)}`);
+  }
+  ellipseTo(rx: number, ry: number, rotation: number, arc: number, sweep: number, x: number, y: number) {
+    this.parts.push(
+      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
+    );
   }
   close() {
     this.parts.push("Z");
@@ -98,6 +102,22 @@ class PathBuilder {
   clear() {
     this.parts = [];
   }
+}
+
+type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
+
+interface GraphicState {
+  ctm: Matrix;
+  fill: string | null;
+  stroke: string | null;
+  strokeWidth?: number;
+  lineCap: "butt" | "round" | "square";
+  lineJoin: "miter" | "round" | "bevel" | "arcs";
+  font: string;
+  fontSize: number;
+  clipStack: string[];
+  dash: string | null;
+  lastTextPos: { x: number; y: number } | null;
 }
 
 function tokenize(ps: string): Token[] {
@@ -269,7 +289,7 @@ function cloneG(s: GraphicState): GraphicState {
     ctm: Object.assign(new Matrix(), s.ctm),
     fill: s.fill,
     stroke: s.stroke,
-    strokeWidth: s.strokeWidth,
+    strokeWidth: s.strokeWidth ?? 1,
     lineCap: s.lineCap,
     lineJoin: s.lineJoin,
     font: s.font,
