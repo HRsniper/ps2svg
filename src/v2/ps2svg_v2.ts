@@ -1,8 +1,83 @@
 import * as fs from "node:fs";
-import { fileInputName, fileOutputName } from "./cli.js";
-import { ryb2rgb, cmyk2rgb } from "../color2rgb.js";
+import { cmyk2rgb, color2rgb } from "../color2rgb.js";
+// import { fileInputName, fileOutputName } from "./cli.js";
+
+console.time("Execution time");
 
 type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
+
+interface GraphicState {
+  ctm: Matrix;
+  fill: string | null;
+  stroke: string | null;
+  strokeWidth: number;
+  lineCap: string;
+  lineJoin: string;
+  font: string;
+  fontSize: number;
+  clipStack: string[];
+  dash?: string | null;
+  lastTextPos?: { x: number; y: number } | null;
+}
+
+class Matrix {
+  a = 1;
+  b = 0;
+  c = 0;
+  d = 1;
+  e = 0;
+  f = 0;
+  multiply(m: Matrix) {
+    const r = new Matrix();
+    r.a = this.a * m.a + this.c * m.b;
+    r.b = this.b * m.a + this.d * m.b;
+    r.c = this.a * m.c + this.c * m.d;
+    r.d = this.b * m.c + this.d * m.d;
+    r.e = this.a * m.e + this.c * m.f + this.e;
+    r.f = this.b * m.e + this.d * m.f + this.f;
+    return r;
+  }
+  translate(tx: number, ty: number) {
+    return this.multiply(Object.assign(new Matrix(), { e: tx, f: ty }));
+  }
+  scale(sx: number, sy: number) {
+    return this.multiply(Object.assign(new Matrix(), { a: sx, d: sy }));
+  }
+  rotate(deg: number) {
+    const r = (deg * Math.PI) / 180;
+    const m = new Matrix();
+    m.a = Math.cos(r);
+    m.b = Math.sin(r);
+    m.c = -Math.sin(r);
+    m.d = Math.cos(r);
+    return this.multiply(m);
+  }
+  applyPoint(x: number, y: number) {
+    return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
+  }
+}
+
+class PathBuilder {
+  parts: string[] = [];
+  moveTo(x: number, y: number) {
+    this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
+  }
+  lineTo(x: number, y: number) {
+    this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
+  }
+  curveTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
+    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x3)} ${numFmt(y3)}`);
+  }
+  close() {
+    this.parts.push("Z");
+  }
+  toPath() {
+    return this.parts.join(" ");
+  }
+  length() {
+    return this.parts.length;
+  }
+}
 
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " ");
@@ -85,57 +160,6 @@ function parseProcedure(tokens: Token[], startIndex: number): { proc: Token[]; n
   return { proc, nextIndex: i };
 }
 
-class Matrix {
-  a = 1;
-  b = 0;
-  c = 0;
-  d = 1;
-  e = 0;
-  f = 0;
-  multiply(m: Matrix) {
-    const r = new Matrix();
-    r.a = this.a * m.a + this.c * m.b;
-    r.b = this.b * m.a + this.d * m.b;
-    r.c = this.a * m.c + this.c * m.d;
-    r.d = this.b * m.c + this.d * m.d;
-    r.e = this.a * m.e + this.c * m.f + this.e;
-    r.f = this.b * m.e + this.d * m.f + this.f;
-    return r;
-  }
-  translate(tx: number, ty: number) {
-    return this.multiply(Object.assign(new Matrix(), { e: tx, f: ty }));
-  }
-  scale(sx: number, sy: number) {
-    return this.multiply(Object.assign(new Matrix(), { a: sx, d: sy }));
-  }
-  rotate(deg: number) {
-    const r = (deg * Math.PI) / 180;
-    const m = new Matrix();
-    m.a = Math.cos(r);
-    m.b = Math.sin(r);
-    m.c = -Math.sin(r);
-    m.d = Math.cos(r);
-    return this.multiply(m);
-  }
-  applyPoint(x: number, y: number) {
-    return { x: x * this.a + y * this.c + this.e, y: x * this.b + y * this.d + this.f };
-  }
-}
-
-interface GraphicState {
-  ctm: Matrix;
-  fill: string | null;
-  stroke: string | null;
-  strokeWidth: number;
-  lineCap: string;
-  lineJoin: string;
-  font: string;
-  fontSize: number;
-  clipStack: string[];
-  dash?: string | null;
-  lastTextPos?: { x: number; y: number } | null;
-}
-
 function cloneG(s: GraphicState): GraphicState {
   return {
     ctm: Object.assign(new Matrix(), s.ctm),
@@ -150,28 +174,6 @@ function cloneG(s: GraphicState): GraphicState {
     dash: s.dash ?? null,
     lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null
   };
-}
-
-class PathBuilder {
-  parts: string[] = [];
-  moveTo(x: number, y: number) {
-    this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
-  }
-  lineTo(x: number, y: number) {
-    this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
-  }
-  curveTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
-    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x3)} ${numFmt(y3)}`);
-  }
-  close() {
-    this.parts.push("Z");
-  }
-  toPath() {
-    return this.parts.join(" ");
-  }
-  length() {
-    return this.parts.length;
-  }
 }
 
 function numFmt(n: number) {
@@ -437,7 +439,6 @@ function interpret(
         path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
         continue;
       }
-
       if (op === "rcurveto") {
         const dy3 = safePopNumber(0),
           dx3 = safePopNumber(0);
@@ -463,8 +464,6 @@ function interpret(
         path.close();
         continue;
       }
-
-      // --- graphics ops
       if (op === "stroke") {
         flushPathAsStroke(path, gState, svgOut);
         path = new PathBuilder();
@@ -484,12 +483,11 @@ function interpret(
         path = new PathBuilder();
         continue;
       }
-
       if (op === "setrgbcolor") {
         const b = safePopNumber(0);
         const g = safePopNumber(0);
         const r = safePopNumber(0);
-        const rgb = ryb2rgb([r, g, b]).toString();
+        const rgb = color2rgb([r, g, b]).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
         continue;
@@ -554,8 +552,6 @@ function interpret(
         if (st) gState = st;
         continue;
       }
-
-      // improved arc
       if (op === "arc") {
         const ang2 = safePopNumber(0);
         const ang1 = safePopNumber(0);
@@ -659,6 +655,7 @@ function interpret(
             `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
           );
         }
+        path = new PathBuilder(); // Limpa path após show
         continue;
       }
       if (op === "showpage") {
@@ -685,8 +682,8 @@ function escapeXML(s: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
+    .replace(/'/g, "&#39;");
+  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
 }
 
 // Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
@@ -753,7 +750,7 @@ function extractBoundingBox(ps: string) {
   return null;
 }
 
-export function convertPostscriptToSVG(psText: string): string {
+function convertPostscriptToSVG(psText: string): string {
   const bBox = extractBoundingBox(psText);
   const tokens = tokenize(psText);
   const svgOut = { defs: [] as string[], elementShapes: [] as string[], elementTexts: [] as string[] };
@@ -780,10 +777,13 @@ export function convertPostscriptToSVG(psText: string): string {
   return svg;
 }
 
-export function convertToFile(inPath: string, outPath: string) {
+function convertSvgToFile(inPath: string, outPath: string) {
   const file = fs.readFileSync(`${inPath}.ps`, "utf8");
   const svg = convertPostscriptToSVG(file);
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
-  console.log(`Converted: ${inPath} -> ${outPath}.svg`);
 }
-convertToFile(fileInputName, fileOutputName);
+// convertSvgToFile(fileInputName, fileOutputName);
+
+console.timeEnd("Execution time");
+
+export { convertPostscriptToSVG, convertSvgToFile };
