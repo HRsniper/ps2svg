@@ -107,35 +107,75 @@ class PathBuilder {
   moveTo(x: number, y: number) {
     this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
   }
+  moveToRel(dx: number, dy: number) {
+    this.parts.push(`m ${numFmt(dx)} ${numFmt(dy)}`);
+  }
+
   lineTo(x: number, y: number) {
     this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
   }
+  lineToRel(dx: number, dy: number) {
+    this.parts.push(`l ${numFmt(dx)} ${numFmt(dy)}`);
+  }
+
   horizontalLineTo(x: number) {
     this.parts.push(`H ${numFmt(x)}`);
   }
+  horizontalLineToRel(dx: number) {
+    this.parts.push(`h ${numFmt(dx)}`);
+  }
+
   verticalLineTo(y: number) {
     this.parts.push(`V ${numFmt(y)}`);
   }
+  verticalLineToRel(dy: number) {
+    this.parts.push(`v ${numFmt(dy)}`);
+  }
+
   curveTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
     this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
   }
+  curveToRel(dx1: number, dy1: number, dx2: number, dy2: number, dx: number, dy: number) {
+    this.parts.push(`c ${numFmt(dx1)} ${numFmt(dy1)} ${numFmt(dx2)} ${numFmt(dy2)} ${numFmt(dx)} ${numFmt(dy)}`);
+  }
+
   smoothCurveTo(x2: number, y2: number, x: number, y: number) {
     this.parts.push(`S ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
   }
+  smoothCurveToRel(dx2: number, dy2: number, dx: number, dy: number) {
+    this.parts.push(`s ${numFmt(dx2)} ${numFmt(dy2)} ${numFmt(dx)} ${numFmt(dy)}`);
+  }
+
   quadraticCurveTo(x1: number, y1: number, x: number, y: number) {
     this.parts.push(`Q ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x)} ${numFmt(y)}`);
   }
+  quadraticCurveToRel(dx1: number, dy1: number, dx: number, dy: number) {
+    this.parts.push(`q ${numFmt(dx1)} ${numFmt(dy1)} ${numFmt(dx)} ${numFmt(dy)}`);
+  }
+
   smoothQuadraticCurveTo(x: number, y: number) {
     this.parts.push(`T ${numFmt(x)} ${numFmt(y)}`);
   }
+  smoothQuadraticCurveToRel(dx: number, dy: number) {
+    this.parts.push(`t ${numFmt(dx)} ${numFmt(dy)}`);
+  }
+
   ellipseTo(rx: number, ry: number, rotation: number, arc: number, sweep: number, x: number, y: number) {
     this.parts.push(
       `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
     );
   }
+  ellipseToRel(rx: number, ry: number, rotation: number, arc: number, sweep: number, dx: number, dy: number) {
+    this.parts.push(
+      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
+    );
+  }
+
   close() {
     this.parts.push("Z");
   }
+
+  // Utilitários
   toPath(): string {
     return this.parts.join(" ");
   }
