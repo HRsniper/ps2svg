@@ -4,22 +4,6 @@ import { cmyk2rgb, color2rgb } from "../color2rgb.js";
 
 console.time("Execution time");
 
-type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
-
-interface GraphicState {
-  ctm: Matrix;
-  fill: string | null;
-  stroke: string | null;
-  strokeWidth: number;
-  lineCap: string;
-  lineJoin: string;
-  font: string;
-  fontSize: number;
-  clipStack: string[];
-  dash?: string | null;
-  lastTextPos?: { x: number; y: number } | null;
-}
-
 class Matrix {
   a = 1;
   b = 0;
@@ -77,6 +61,22 @@ class PathBuilder {
   length() {
     return this.parts.length;
   }
+}
+
+type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
+
+interface GraphicState {
+  ctm: Matrix;
+  fill: string | null;
+  stroke: string | null;
+  strokeWidth: number;
+  lineCap: string;
+  lineJoin: string;
+  font: string;
+  fontSize: number;
+  clipStack: string[];
+  dash?: string | null;
+  lastTextPos?: { x: number; y: number } | null;
 }
 
 function tokenize(ps: string): Token[] {
