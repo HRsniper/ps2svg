@@ -268,21 +268,21 @@ function tokenize(ps: string): Token[] {
 // PS string unescaping: Char-by-char loop for precise handling (per PLRM)
 function unescapePostscriptString(str: string): string {
   let result = "";
-  let i = 0;
+  let index = 0;
 
-  while (i < str.length) {
-    if (str[i] !== "\\") {
-      result += str[i];
-      i++;
+  while (index < str.length) {
+    if (str[index] !== "\\") {
+      result += str[index];
+      index++;
       continue;
     }
     // Escape sequence: \ followed by...
-    i++; // Skip the \
-    if (i >= str.length) {
+    index++; // Skip the \
+    if (index >= str.length) {
       result += "\\"; // Trailing \ -> literal \
       break;
     }
-    const nextChar = str[i];
+    const nextChar = str[index];
     switch (nextChar) {
       case "n":
         result += "\n";
@@ -315,25 +315,25 @@ function unescapePostscriptString(str: string): string {
         // Octal: \ddd (1-3 digits 0-7)
         if (nextChar >= "0" && nextChar <= "7") {
           let octal = nextChar;
-          i++;
-          if (i < str.length && str[i] >= "0" && str[i] <= "7") {
-            octal += str[i];
-            i++;
-            if (i < str.length && str[i] >= "0" && str[i] <= "7") {
-              octal += str[i];
-              i++;
+          index++;
+          if (index < str.length && str[index] >= "0" && str[index] <= "7") {
+            octal += str[index];
+            index++;
+            if (index < str.length && str[index] >= "0" && str[index] <= "7") {
+              octal += str[index];
+              index++;
             }
           }
           const code = parseInt(octal, 8);
           result += String.fromCharCode(code > 255 ? 255 : code);
-          i--; // Adjust for loop increment
+          index--; // Adjust for loop increment
         } else {
           // Literal next char (non-special, e.g., \n where n is literal 'n' after escaped \)
           result += nextChar;
         }
         break;
     }
-    i++;
+    index++;
   }
   return result;
 }
