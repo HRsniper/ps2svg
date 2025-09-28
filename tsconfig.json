@@ -4,6 +4,7 @@
     // File Layout
     // "rootDir": "./src",
     "outDir": "./dist",
+    "removeComments": true,
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -40,5 +41,6 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }
