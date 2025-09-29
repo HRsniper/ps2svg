@@ -557,6 +557,13 @@ function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
   }
   return true; // Near EOF: flush
 }
+
+// Função para executar um procedimento (insere tokens no fluxo atual)
+function executeProcedure(tokens: Token[], procTokens: Token[], currentIndex: number) {
+  // Insere os tokens do procedimento na posição atual
+  tokens.splice(currentIndex + 1, 0, ...procTokens);
+}
+
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
@@ -568,12 +575,6 @@ function interpret(
   let path = new PathBuilder();
   let currentX = 0,
     currentY = 0;
-
-  // Função para executar um procedimento (insere tokens no fluxo atual)
-  function executeProcedure(procTokens: Token[], currentIndex: number) {
-    // Insere os tokens do procedimento na posição atual
-    tokens.splice(currentIndex + 1, 0, ...procTokens);
-  }
 
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
@@ -591,7 +592,7 @@ function interpret(
       if (dictVal !== undefined) {
         if (dictVal && typeof dictVal === "object" && dictVal.type === "procedure") {
           // Executa o procedimento
-          executeProcedure(dictVal.body, i);
+          executeProcedure(tokens, dictVal.body, i);
         } else {
           stack.push(dictVal);
         }
