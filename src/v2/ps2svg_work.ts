@@ -808,12 +808,14 @@ function interpret(
         path.clear();
       }
     },
+
     image: () => handleImage(true),
     imagemask: () => handleImage(false),
     findfont: () => {
       const fname = stack.pop();
       stack.push({ font: typeof fname === "string" ? fname : String(fname) });
     },
+
     scalefont: () => {
       const size = safePopNumber(stack);
       const fontObj = stack.pop();
@@ -824,6 +826,7 @@ function interpret(
         stack.push({ font: String(fontObj), size });
       }
     },
+
     setfont: () => {
       const f = stack.pop();
       if (f && typeof f === "object") {
@@ -833,6 +836,7 @@ function interpret(
         gState.font = f;
       }
     },
+
     show: () => {
       const s = String(stack.pop() ?? "");
       const escaped = escapeXML(s);
@@ -1079,7 +1083,7 @@ function convertPostscriptToSVG(psText: string): string {
     viewBoxAttr = `viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"`;
   }
 
-  interpret(tokens, svgOut, bBox ?? undefined, false);
+  interpret(tokens, svgOut, bBox ?? undefined, true);
 
   const defs = svgOut.defs.join("\n");
   const shapes = svgOut.elementShapes.join("\n");

@@ -216,6 +216,9 @@ const FillOnly = { stroke: false, fill: true };
 const StrokeOnly = { stroke: true, fill: false };
 const FillAndStroke = { stroke: true, fill: true };
 
+const DEFAULT_IMAGE =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkltYWdlbTwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMjk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPk5vdDwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMzk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkZvdW5kPC90ZXh0Pgo8L3N2Zz4K";
+
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " "); // Remove comments
   const numRe = /-?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][+-]?\d+)?/y; // 12 .2 3e4
@@ -989,17 +992,23 @@ function interpret(
       }
 
       if (op === "clip") {
-        // apenas marca clipStack, não aplica ainda
-        gState.clipStack.push(path.toPath());
-        path.parts = [];
+        if (path.length() > 0) {
+          const clipPath = path.toPath();
+          const clipId = `clip${clipIdCounter++}`;
+          svgOut.defs.push(`<clipPath id="${clipId}"><path d="${clipPath}" /></clipPath>`);
+          gState.clipStack.push(clipPath);
+          path.clear();
+        }
         continue;
       }
+
       if (op === "image" || op === "imagemask") {
         svgOut.elementShapes.push(
-          `<!-- image/imagemask not implemented --><image x="100" y="100" width="50" height="50" href="placeholder.png" />`
+          `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="${DEFAULT_IMAGE}" />`
         );
         continue;
       }
+
       if (op === "findfont") {
         const fname = stack.pop();
         if (typeof fname === "string") {
@@ -1009,6 +1018,7 @@ function interpret(
         }
         continue;
       }
+
       if (op === "scalefont") {
         const size = safePopNumber(stack, 0);
         const fontObj = stack.pop();
@@ -1020,29 +1030,62 @@ function interpret(
         }
         continue;
       }
+
       if (op === "setfont") {
-        const f = stack.pop();
-        if (f && typeof f === "object") {
-          gState.font = f.font ?? gState.font;
-          gState.fontSize = f.size ?? gState.fontSize;
-        } else if (typeof f === "string") {
-          gState.font = f;
+        const sFont = stack.pop();
+        if (sFont && typeof sFont === "object") {
+          gState.font = sFont.font ?? gState.font;
+          gState.fontSize = sFont.size ?? gState.fontSize;
+        } else if (typeof sFont === "string") {
+          gState.font = sFont;
         }
         continue;
       }
+
       if (op === "show") {
         const s = String(stack.pop() ?? "");
         const escaped = escapeXML(s);
         if (gState.lastTextPos) {
           const p = gState.ctm.applyPoint(gState.lastTextPos.x, gState.lastTextPos.y);
           svgOut.elementShapes.push(
-            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
+            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}">${escaped}</text>`
           );
         }
         path = path.reset(); // Limpa path após show
         continue;
       }
       if (op === "showpage") {
+        continue;
+      }
+
+      if (op === "shfill") {
+        const shading = stack.pop();
+
+        if (shading && typeof shading === "object") {
+          if (shading?.ShadingType === 2) {
+            const coords = shading?.Coords;
+            const c0 = color2rgb(shading?.Function?.C0 || [1, 0, 0]).toString();
+            const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 1]).toString();
+            const gradId = `grad${clipIdCounter++}`;
+            svgOut.defs.push(
+              `<linearGradient id="${gradId}" x1="${numFmt(coords[0])}" y1="${numFmt(coords[1])}" x2="${numFmt(coords[2])}" y2="${numFmt(coords[3])}">
+            <stop offset="0" stop-color="${c0}" />
+            <stop offset="1" stop-color="${c1}" />
+          </linearGradient>`
+            );
+            if (path.length() > 0) {
+              const d = path.toPath();
+              svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" />`);
+              path.clear();
+            }
+          }
+        } else {
+          svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
+        }
+        continue;
+      }
+
+      if (op === "setcolorspace") {
         continue;
       }
 
