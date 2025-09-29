@@ -185,6 +185,9 @@ class PathBuilder {
   clear() {
     this.parts = [];
   }
+  reset(): PathBuilder {
+    return new PathBuilder();
+  }
 }
 
 type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
@@ -677,7 +680,7 @@ function interpret(
         continue;
       }
       if (op === "newpath") {
-        path = new PathBuilder();
+        path = path.reset();
         continue;
       }
       if (op === "moveto") {
@@ -717,7 +720,7 @@ function interpret(
         ) {
           // if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
           flushPath(path, gState, svgOut, StrokeOnly);
-          path = new PathBuilder();
+          path = path.reset(); // Reset imediato para próximo moveto
         }
         continue;
       }
@@ -772,7 +775,7 @@ function interpret(
       }
       if (op === "stroke") {
         flushPath(path, gState, svgOut, StrokeOnly);
-        path = new PathBuilder();
+        path = path.reset();
         continue;
       }
       if (op === "fill" || op === "eofill" || op === "evenodd") {
@@ -786,7 +789,7 @@ function interpret(
           }
         }
         flushPath(path, gState, svgOut, FillOnly);
-        path = new PathBuilder();
+        path = path.reset();
         continue;
       }
       if (op === "setrgbcolor") {
@@ -961,7 +964,7 @@ function interpret(
             `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
           );
         }
-        path = new PathBuilder(); // Limpa path após show
+        path = path.reset(); // Limpa path após show
         continue;
       }
       if (op === "showpage") {

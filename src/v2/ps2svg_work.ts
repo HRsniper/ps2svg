@@ -185,6 +185,9 @@ class PathBuilder {
   clear() {
     this.parts = [];
   }
+  reset(): PathBuilder {
+    return new PathBuilder();
+  }
 }
 
 type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
@@ -963,7 +966,7 @@ function interpret(
         // Sempre cheque se é segmento simple (M L) e flush se ahead indica fim
         if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
           flushPathAsStroke(path, gState, svgOut);
-          path = new PathBuilder(); // Reset imediato para próximo moveto
+          path = path.reset(); // Reset imediato para próximo moveto
         }
       }
 
@@ -979,11 +982,12 @@ function interpret(
     const allParts = path.parts;
     if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
       let subPath = new PathBuilder();
+      subPath.reset();
       for (const part of allParts) {
         if (part.startsWith("M ")) {
           if (subPath.length() > 0) {
             flushPathAsStroke(subPath, gState, svgOut);
-            subPath = new PathBuilder();
+            subPath = subPath.reset();
           }
           subPath.parts.push(part);
         } else if (part.startsWith("L ")) {
@@ -991,7 +995,7 @@ function interpret(
           if (subPath.length() === 2) {
             // Emit simple M L
             flushPathAsStroke(subPath, gState, svgOut);
-            subPath = new PathBuilder();
+            subPath = subPath.reset();
           }
         }
       }
