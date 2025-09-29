@@ -607,35 +607,44 @@ function handleArc(
 
   const delta = (((ang2 - ang1) % 360) + 360) % 360;
 
-  if (Math.abs(delta) < 1e-6) {
+  const isFullCircle = Math.abs(delta) < 1e-6;
+  const isUniformTransform = Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6;
+  const isArcClosed = Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6;
+
+  if (isFullCircle) {
     const cP = gState.ctm.applyPoint(x, y);
     const avgR = (rx + ry) / 2;
-    if (Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6) {
+    if (isUniformTransform) {
       svgOut.elementShapes.push(
-        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
+        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
       );
     } else {
       const midAng = ang1 + 180;
       const mid = anglePoint(x, y, r, midAng);
       const pMid = gState.ctm.applyPoint(mid.x, mid.y);
+
       const d1 = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pMid.y)}`;
       const d2 = `M ${numFmt(pMid.x)} ${numFmt(pMid.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
       svgOut.elementShapes.push(
-        `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
+        `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
       );
       svgOut.elementShapes.push(
-        `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
+        `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
       );
+      // const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pEnd.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pStart.x)} ${numFmt(pStart.y)}`;
+      // svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
     }
   } else {
     const largeArc = delta > 180 ? 1 : 0;
     const sweep = delta > 0 ? 1 : 0;
-    if (!(Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6)) {
-      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+
+    if (!isArcClosed) {
+      const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
       const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
-      svgOut.elementShapes.push(
-        `<path d="${d}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
-      );
+      // svgOut.elementShapes.push(
+      //   `<path d="${dd}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
+      // );
+      svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
     }
   }
 }

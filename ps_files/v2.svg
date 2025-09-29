@@ -4,15 +4,15 @@
 <g transform="translate(0, 400) scale(1,-1)">
 <path d="M 50 50 L 150 150" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 200 50 L 300 50 L 300 100 L 200 100 Z" fill="black" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
-<circle cx="200" cy="200" r="40" fill="none" stroke="none" stroke-width="1"/>
+<circle cx="200" cy="200" r="40" fill="black" stroke="black" stroke-width="1"/>
 <path d="M 380 200 A 80 40 0 0 1 220 200" fill="none" stroke="black" stroke-width="1"/>
 <path d="M 220 200 A 80 40 0 0 1 380 200" fill="none" stroke="black" stroke-width="1"/>
 <path d="M 50 250 L 100 300 L 150 250 Z" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 50 350 C 100 380 150 320 200 350" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <text transform="scale(1,-1)" x="100" y="-370" font-family="Times-Roman" font-size="18" fill="black" stroke="none">Olá Mundo</text>
-<circle cx="250" cy="300" r="30" fill="none" stroke="rgb(51, 153, 204)" stroke-width="1"/>
-<circle cx="350" cy="300" r="20" fill="none" stroke="rgb(128, 128, 128)" stroke-width="1"/>
-<circle cx="300" cy="350" r="20" fill="none" stroke="rgb(255, 128, 128)" stroke-width="1"/>
+<circle cx="250" cy="300" r="30" fill="rgb(51, 153, 204)" stroke="rgb(51, 153, 204)" stroke-width="1"/>
+<circle cx="350" cy="300" r="20" fill="rgb(128, 128, 128)" stroke="rgb(128, 128, 128)" stroke-width="1"/>
+<circle cx="300" cy="350" r="20" fill="rgb(255, 128, 128)" stroke="rgb(255, 128, 128)" stroke-width="1"/>
 <path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 142.426 142.426 A 60 30 0 0 1 57.574 57.574" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5"/>
 <path d="M 57.574 57.574 A 60 30 0 0 1 142.426 142.426" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5"/>
@@ -23,7 +23,7 @@
 <!-- Unhandled operator: setcolorspace -->
 <!-- Unhandled operator: pattern -->
 <!-- Unhandled operator: setcolor -->
-<circle cx="200" cy="200" r="50" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5"/>
+<circle cx="200" cy="200" r="50" fill="rgb(255, 128, 128)" stroke="rgb(255, 128, 128)" stroke-width="5"/>
 <path d="M 100 200 L 100 280 L 250 280 L 250 200 L 100 200 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 </g>
 
