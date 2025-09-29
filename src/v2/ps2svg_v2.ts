@@ -539,6 +539,24 @@ function safePopNumber(stack: any[], def = 0): number {
   return def;
 }
 
+// Helper for simple line flush
+function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
+  // Verifica os próximos tokens para ver se é uma linha isolada
+  for (let j = startIdx; j < Math.min(startIdx + 3, tokens.length); j++) {
+    const token = tokens[j];
+    if (token.type === "operator") {
+      const value = token.value;
+      // Se for um operador que indica fim ou texto, é linha simples
+      if (["stroke", "show", "moveto"].includes(value)) return true;
+      // Se for um operador vetorial, não é linha simples
+      if (["lineto", "curveto", "rlineto", "rcurveto"].includes(value)) return false;
+
+      // Operador desconhecido: assume seguro
+      return true;
+    }
+  }
+  return true; // Near EOF: flush
+}
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },

@@ -529,18 +529,16 @@ function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number
 function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
   // Conservador: Assume simple se próximo não é outro path op (flush safe)
   for (let j = startIdx; j < Math.min(startIdx + 3, tokens.length); j++) {
-    const t = tokens[j];
-    if (t.type === "operator") {
-      const val = t.value;
-      if (
-        val === "stroke" ||
-        val === "show" ||
-        val === "moveto" ||
-        !["lineto", "curveto", "rlineto", "rcurveto"].includes(val)
-      ) {
-        return true;
-      }
-      return false;
+    const token = tokens[j];
+    if (token.type === "operator") {
+      const value = token.value;
+      // Se for um operador que indica fim ou texto, é linha simples
+      if (["stroke", "show", "moveto"].includes(value)) return true;
+      // Se for um operador vetorial, não é linha simples
+      if (["lineto", "curveto", "rlineto", "rcurveto"].includes(value)) return false;
+
+      // Operador desconhecido: assume seguro
+      return true;
     }
   }
   return true; // Near EOF: flush
