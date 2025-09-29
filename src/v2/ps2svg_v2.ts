@@ -746,23 +746,24 @@ function interpret(
       }
 
       if (op === "curveto") {
-        const y3 = safePopNumber(stack, 0),
-          x3 = safePopNumber(stack, 0);
+        const y = safePopNumber(stack, 0),
+          x = safePopNumber(stack, 0);
         const y2 = safePopNumber(stack, 0),
           x2 = safePopNumber(stack, 0);
         const y1 = safePopNumber(stack, 0),
           x1 = safePopNumber(stack, 0);
-        currentX = x3;
-        currentY = y3;
-        const p1 = gState.ctm.applyPoint(x1, y1);
-        const p2 = gState.ctm.applyPoint(x2, y2);
-        const p3 = gState.ctm.applyPoint(x3, y3);
-        path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        currentX = x;
+        currentY = y;
+        const pos1 = gState.ctm.applyPoint(x1, y1);
+        const pos2 = gState.ctm.applyPoint(x2, y2);
+        const pos3 = gState.ctm.applyPoint(x, y);
+        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
         continue;
       }
+
       if (op === "rcurveto") {
-        const dy3 = safePopNumber(stack, 0),
-          dx3 = safePopNumber(stack, 0);
+        const dy = safePopNumber(stack, 0),
+          dx = safePopNumber(stack, 0);
         const dy2 = safePopNumber(stack, 0),
           dx2 = safePopNumber(stack, 0);
         const dy1 = safePopNumber(stack, 0),
@@ -771,25 +772,29 @@ function interpret(
           y1 = currentY + dy1;
         const x2 = currentX + dx2,
           y2 = currentY + dy2;
-        currentX += dx3;
-        currentY += dy3;
-        const x3 = currentX,
-          y3 = currentY;
-        const p1 = gState.ctm.applyPoint(x1, y1);
-        const p2 = gState.ctm.applyPoint(x2, y2);
-        const p3 = gState.ctm.applyPoint(x3, y3);
-        path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        currentX += dx;
+        currentY += dy;
+        const x = currentX,
+          y = currentY;
+        const pos1 = gState.ctm.applyPoint(x1, y1);
+        const pos2 = gState.ctm.applyPoint(x2, y2);
+        const pos3 = gState.ctm.applyPoint(x, y);
+        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        // path.curveToRel(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
         continue;
       }
+
       if (op === "closepath") {
         path.close();
         continue;
       }
+
       if (op === "stroke") {
         flushPath(path, gState, svgOut, StrokeOnly);
         path = path.reset();
         continue;
       }
+
       if (op === "fill" || op === "eofill" || op === "evenodd") {
         // Verifica se o path é um retângulo simples para otimização
         if (isRectanglePath(path)) {
@@ -804,6 +809,7 @@ function interpret(
         path = path.reset();
         continue;
       }
+
       if (op === "setrgbcolor") {
         const b = safePopNumber(stack, 0);
         const g = safePopNumber(stack, 0);
@@ -813,6 +819,7 @@ function interpret(
         gState.stroke = rgb;
         continue;
       }
+
       if (op === "setgray") {
         const v = safePopNumber(stack, 0);
         const gray = Math.round(v * 255);
@@ -821,6 +828,7 @@ function interpret(
         gState.stroke = s;
         continue;
       }
+
       if (op === "setcmykcolor") {
         const k = safePopNumber(stack, 0);
         const y = safePopNumber(stack, 0);

@@ -670,23 +670,23 @@ function interpret(
     },
 
     curveto: () => {
-      const y3 = safePopNumber(stack),
-        x3 = safePopNumber(stack);
+      const y = safePopNumber(stack),
+        x = safePopNumber(stack);
       const y2 = safePopNumber(stack),
         x2 = safePopNumber(stack);
       const y1 = safePopNumber(stack),
         x1 = safePopNumber(stack);
-      currentX = x3;
-      currentY = y3;
-      const p1 = gState.ctm.applyPoint(x1, y1);
-      const p2 = gState.ctm.applyPoint(x2, y2);
-      const p3 = gState.ctm.applyPoint(x3, y3);
-      path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+      currentX = x;
+      currentY = y;
+      const pos1 = gState.ctm.applyPoint(x1, y1);
+      const pos2 = gState.ctm.applyPoint(x2, y2);
+      const pos3 = gState.ctm.applyPoint(x, y);
+      path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
     },
 
     rcurveto: () => {
-      const dy3 = safePopNumber(stack),
-        dx3 = safePopNumber(stack);
+      const dy = safePopNumber(stack),
+        dx = safePopNumber(stack);
       const dy2 = safePopNumber(stack),
         dx2 = safePopNumber(stack);
       const dy1 = safePopNumber(stack),
@@ -695,26 +695,29 @@ function interpret(
         y1 = currentY + dy1;
       const x2 = currentX + dx2,
         y2 = currentY + dy2;
-      currentX += dx3;
-      currentY += dy3;
-      const x3 = currentX,
-        y3 = currentY;
-      const p1 = gState.ctm.applyPoint(x1, y1);
-      const p2 = gState.ctm.applyPoint(x2, y2);
-      const p3 = gState.ctm.applyPoint(x3, y3);
-      path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+      currentX += dx;
+      currentY += dy;
+      const x = currentX,
+        y = currentY;
+      const pos1 = gState.ctm.applyPoint(x1, y1);
+      const pos2 = gState.ctm.applyPoint(x2, y2);
+      const pos3 = gState.ctm.applyPoint(x, y);
+      path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
     },
 
     closepath: () => {
       path.close();
     },
+
     stroke: () => {
       flushPathAsStroke(path, gState, svgOut);
       path.clear();
     },
+
     fill: () => handleFill("nonzero"),
     eofill: () => handleFill("evenodd"),
     evenodd: () => {},
+
     setrgbcolor: () => {
       const b = safePopNumber(stack),
         g = safePopNumber(stack),
@@ -723,6 +726,7 @@ function interpret(
       gState.fill = rgb;
       gState.stroke = rgb;
     },
+
     setgray: () => {
       const v = safePopNumber(stack);
       const gray = Math.round(v * 255);
@@ -730,6 +734,7 @@ function interpret(
       gState.fill = s;
       gState.stroke = s;
     },
+
     setcmykcolor: () => {
       const k = safePopNumber(stack),
         y = safePopNumber(stack),
