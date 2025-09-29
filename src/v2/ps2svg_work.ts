@@ -1014,6 +1014,7 @@ function convertPostscriptToSVG(psText: string): string {
   let viewBoxAttr = "";
   let height = 0,
     width = 0;
+
   if (bBox) {
     width = bBox.urx - bBox.llx;
     height = bBox.ury - bBox.lly;
@@ -1030,7 +1031,8 @@ function convertPostscriptToSVG(psText: string): string {
   const shapes = svgOut.elementShapes.join("\n");
   const texts = svgOut.elementTexts.join("\n");
   const body = `<g transform="translate(0, ${height}) scale(1, -1)">\n${shapes}\n${texts}\n</g>`;
-  return `<?xml version="1.0" encoding="utf-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" ${viewBoxAttr}>\n${defs}\n${body}\n</svg>`;
+  const svg = `<?xml version="1.0" encoding="utf-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" ${viewBoxAttr}>\n${defs}\n${body}\n</svg>`;
+  return svg;
 }
 
 function convertSvgToFile(inPath: string, outPath: string) {
@@ -1039,7 +1041,6 @@ function convertSvgToFile(inPath: string, outPath: string) {
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
   console.log(`Converted: ${inPath} -> ${outPath}.svg`);
 }
-
 convertSvgToFile(fileInputName, fileOutputName);
 
 console.timeEnd("Execution time");

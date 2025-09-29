@@ -1000,18 +1000,19 @@ function convertPostscriptToSVG(psText: string): string {
   let viewBoxAttr = "";
   let height = 0;
   let width = 0;
+
   if (bBox) {
     width = bBox.urx - bBox.llx;
     height = bBox.ury - bBox.lly;
     viewBoxAttr = `viewBox="${bBox.llx} ${bBox.lly} ${width} ${height}" width="${width}" height="${height}"`;
-  }
-  if (bBox === null) {
+  } else {
     width = 1920;
     height = 1080;
     viewBoxAttr = `viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"`;
   }
 
   interpret(tokens, svgOut, bBox ?? undefined);
+
   const defs = svgOut.defs.join("\n");
   const shapes = svgOut.elementShapes.join("\n");
   const texts = svgOut.elementTexts.join("\n");
