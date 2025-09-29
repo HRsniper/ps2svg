@@ -209,6 +209,10 @@ interface PostscriptDict {
   [key: string]: PostscriptValue;
 }
 
+const FillOnly = { stroke: false, fill: true };
+const StrokeOnly = { stroke: true, fill: false };
+const FillAndStroke = { stroke: true, fill: true };
+
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " "); // Remove comments
   const numRe = /-?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][+-]?\d+)?/y; // 12 .2 3e4
@@ -416,16 +420,18 @@ function isIdentityMatrix(m: Matrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-function emitSVGPath(d: string, g: GraphicState, fillMode = false, addDash = false): string {
+function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, addDash = false): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
-  const strokeColor = g.stroke ?? "black";
-  const fillColor = fillMode ? (g.fill ?? "black") : "none";
-  const strokeAttr = fillMode ? "none" : strokeColor;
+  const fillColor = mode.fill ? (g.fill ?? "black") : "none";
+  const strokeColor = mode.stroke ? (g.stroke ?? "black") : "none";
+  const strokeAttr = mode.stroke ? strokeColor : "none";
+
   const strokeWidthAttr = g.strokeWidth ? `stroke-width="${g.strokeWidth}"` : "";
   const strokeLineCapAttr = g.lineCap ? `stroke-linecap="${g.lineCap}"` : "";
   const strokeLineJoinAttr = g.lineJoin ? `stroke-linejoin="${g.lineJoin}"` : "";
   const dashAttr = addDash && g.dash ? `stroke-dasharray="${g.dash}"` : "";
+
   const pathAttrs = [
     `d="${d}"`,
     `fill="${fillColor}"`,
@@ -706,7 +712,7 @@ function interpret(
         }
 
         if (isSimpleLine) {
-          flushPathAsStroke(path, gState, svgOut);
+          flushPath(path, gState, svgOut, StrokeOnly);
           path = new PathBuilder();
         }
         continue;
@@ -761,7 +767,7 @@ function interpret(
         continue;
       }
       if (op === "stroke") {
-        flushPathAsStroke(path, gState, svgOut);
+        flushPath(path, gState, svgOut, StrokeOnly);
         path = new PathBuilder();
         continue;
       }
@@ -775,7 +781,7 @@ function interpret(
             continue;
           }
         }
-        flushPathAsFill(path, gState, svgOut);
+        flushPath(path, gState, svgOut, FillOnly);
         path = new PathBuilder();
         continue;
       }
@@ -963,22 +969,19 @@ function interpret(
     }
   }
   if (path.length() > 0) {
-    flushPathAsStroke(path, gState, svgOut);
+    flushPath(path, gState, svgOut, StrokeOnly);
   }
 }
 
-function flushPathAsStroke(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
+function flushPath(
+  path: PathBuilder,
+  g: GraphicState,
+  svgOut: { elementShapes: string[] },
+  mode: { stroke: boolean; fill: boolean }
+) {
   if (path.length() === 0) return;
   const d = path.toPath();
-  const pathStr = emitSVGPath(d, g, false);
-  svgOut.elementShapes.push(pathStr);
-  path.clear();
-}
-
-function flushPathAsFill(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
-  if (path.length() === 0) return;
-  const d = path.toPath();
-  const pathStr = emitSVGPath(d, g, true);
+  const pathStr = emitSVGPath(d, g, mode);
   svgOut.elementShapes.push(pathStr);
   path.clear();
 }
