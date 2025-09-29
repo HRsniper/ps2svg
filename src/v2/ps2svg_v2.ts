@@ -449,6 +449,65 @@ function emitSVGPath(d: string, g: GraphicState, fillMode = false, addDash = fal
   }
 }
 
+// Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
+function isRectanglePath(path: PathBuilder): boolean {
+  const parts = path.parts;
+  if (parts.length < 5) return false; // M + 4L + Z
+  if (!parts[0].startsWith("M ")) return false;
+  if (!parts[parts.length - 1].endsWith("Z")) return false;
+  const lines = parts.slice(1, -1);
+  if (lines.length !== 4) return false;
+  return lines.every((p) => p.startsWith("L "));
+}
+
+function extractRectangle(
+  path: PathBuilder,
+  gState: GraphicState
+): { rect: string; minX: number; minY: number; width: number; height: number } | null {
+  if (!isRectanglePath(path)) return null;
+
+  try {
+    const parts = path.parts;
+    const mMatch = parts[0].match(/M\s+([-.\d]+)\s+([-.\d]+)/);
+    const lMatches = parts.slice(1, -1).map((p) => p.match(/L\s+([-.\d]+)\s+([-.\d]+)/));
+
+    if (!mMatch || lMatches.some((m) => !m)) return null;
+
+    const [x1, y1] = mMatch.slice(1).map(Number);
+    const coords = lMatches.map((m) => m!.slice(1).map(Number));
+
+    const [x2, y2] = coords[0];
+    const [x3, y3] = coords[1];
+    const [x4, y4] = coords[2];
+    const [x5, y5] = coords[3];
+
+    // Verificações geométricas
+    if (Math.abs(x5 - x1) > 1e-6 || Math.abs(y5 - y1) > 1e-6) return null;
+    if (Math.abs(x2 - x1) > 1e-6 && Math.abs(y2 - y1) > 1e-6) return null;
+    if (Math.abs(x3 - x2) < 1e-6 || Math.abs(y3 - y2) < 1e-6) return null;
+
+    const xs = [x1, x2, x3, x4, x5];
+    const ys = [y1, y2, y3, y4, y5];
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const width = Math.max(...xs) - minX;
+    const height = Math.max(...ys) - minY;
+
+    const fillColor = gState.fill ?? "black";
+    const rectAttrs = `x="${numFmt(minX)}" y="${numFmt(minY)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${fillColor}"`;
+
+    const m = gState.ctm;
+    const needTransform = !isIdentityMatrix(gState.ctm);
+    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
+
+    const rect = needTransform ? `<g transform="${transform}"><rect ${rectAttrs}/></g>` : `<rect ${rectAttrs}/>`;
+
+    return { rect, minX, minY, width, height };
+  } catch {
+    return null;
+  }
+}
+
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
@@ -708,7 +767,7 @@ function interpret(
         if (isRectanglePath(path)) {
           const rect = extractRectangle(path, gState);
           if (rect) {
-            svgOut.elementShapes.push(rect);
+            svgOut.elementShapes.push(rect.rect);
             path.parts = [];
             continue;
           }
@@ -918,63 +977,6 @@ function escapeXML(s: string) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
   // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
-}
-
-// Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
-function isRectanglePath(path: PathBuilder): boolean {
-  const parts = path.parts;
-  if (parts.length < 5) return false; // M + 4L + Z
-  if (!parts[0].startsWith("M ")) return false;
-  if (!parts[parts.length - 1].endsWith("Z")) return false;
-  const lines = parts.slice(1, -1);
-  if (lines.length !== 4) return false;
-  return lines.every((p) => p.startsWith("L "));
-}
-
-// Extrai coordenadas de retângulo e gera SVG <rect>
-function extractRectangle(path: PathBuilder, gState: GraphicState): string | null {
-  const parts = path.parts;
-  if (!isRectanglePath(path)) return null;
-
-  try {
-    // Parse das coordenadas
-    const mCoords = parts[0].substring(2).split(" ").map(Number);
-    const l1Coords = parts[1].substring(2).split(" ").map(Number);
-    const l2Coords = parts[2].substring(2).split(" ").map(Number);
-    const l3Coords = parts[3].substring(2).split(" ").map(Number);
-    const l4Coords = parts[4].substring(2).split(" ").map(Number);
-
-    const x = mCoords[0];
-    const y = mCoords[1];
-    const width = Math.abs(l2Coords[0] - mCoords[0]);
-    const height = Math.abs(l1Coords[1] - mCoords[1]);
-
-    // Verifica se é realmente um retângulo
-    if (Math.abs(l1Coords[0] - x) > 1e-6) return null; // primeira linha deve ser vertical
-    if (Math.abs(l2Coords[1] - l1Coords[1]) > 1e-6) return null; // segunda linha deve ser horizontal
-    if (Math.abs(l3Coords[0] - l2Coords[0]) > 1e-6) return null; // terceira linha deve ser vertical
-    if (Math.abs(l4Coords[1] - y) > 1e-6) return null; // quarta linha deve voltar à altura original
-
-    const fillColor = gState.fill || "black";
-
-    // Aplica transformação se necessária
-    const needG =
-      gState.ctm.a !== 1 ||
-      gState.ctm.b !== 0 ||
-      gState.ctm.c !== 0 ||
-      gState.ctm.d !== 1 ||
-      gState.ctm.e !== 0 ||
-      gState.ctm.f !== 0;
-
-    if (needG) {
-      const m = gState.ctm;
-      return `<g transform="matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})"><rect x="${numFmt(x)}" y="${numFmt(y)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${fillColor}" /></g>`;
-    } else {
-      return `<rect x="${numFmt(x)}" y="${numFmt(y)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${fillColor}" />`;
-    }
-  } catch (e) {
-    return null;
-  }
 }
 
 function extractBoundingBox(ps: string) {

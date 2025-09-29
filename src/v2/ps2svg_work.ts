@@ -461,53 +461,39 @@ function extractRectangle(
 
   try {
     const parts = path.parts;
-    const mMatch = parts[0].match(/M ([-.\d]+) ([-.\d]+)/);
-    const lMatchesRaw = parts.slice(1, -1).map((p) => p.match(/L ([-.\d]+) ([-.\d]+)/));
+    const mMatch = parts[0].match(/M\s+([-.\d]+)\s+([-.\d]+)/);
+    const lMatches = parts.slice(1, -1).map((p) => p.match(/L\s+([-.\d]+)\s+([-.\d]+)/));
 
-    const lMatches = lMatchesRaw.filter((m): m is RegExpMatchArray => m !== null);
-    if (lMatches.length !== 4 || !mMatch) return null;
+    if (!mMatch || lMatches.some((m) => !m)) return null;
 
-    const [, x1Str, y1Str] = mMatch;
-    const [, x2Str, y2Str] = lMatches[0];
-    const [, x3Str, y3Str] = lMatches[1];
-    const [, x4Str, y4Str] = lMatches[2];
-    const [, x5Str, y5Str] = lMatches[3];
+    const [x1, y1] = mMatch.slice(1).map(Number);
+    const coords = lMatches.map((m) => m!.slice(1).map(Number));
 
-    const x1 = Number(x1Str),
-      y1 = Number(y1Str);
-    const x2 = Number(x2Str),
-      y2 = Number(y2Str);
-    const x3 = Number(x3Str),
-      y3 = Number(y3Str);
-    const x4 = Number(x4Str),
-      y4 = Number(y4Str);
-    const x5 = Number(x5Str),
-      y5 = Number(y5Str);
+    const [x2, y2] = coords[0];
+    const [x3, y3] = coords[1];
+    const [x4, y4] = coords[2];
+    const [x5, y5] = coords[3];
+
+    // Verificações geométricas
+    if (Math.abs(x5 - x1) > 1e-6 || Math.abs(y5 - y1) > 1e-6) return null;
+    if (Math.abs(x2 - x1) > 1e-6 && Math.abs(y2 - y1) > 1e-6) return null;
+    if (Math.abs(x3 - x2) < 1e-6 || Math.abs(y3 - y2) < 1e-6) return null;
 
     const xs = [x1, x2, x3, x4, x5];
     const ys = [y1, y2, y3, y4, y5];
-    const minX = Math.min(...xs),
-      minY = Math.min(...ys);
-    const maxX = Math.max(...xs),
-      maxY = Math.max(...ys);
-    const width = maxX - minX;
-    const height = maxY - minY;
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const width = Math.max(...xs) - minX;
+    const height = Math.max(...ys) - minY;
 
-    if (Math.abs(x5 - x1) > 1e-3 || Math.abs(y5 - y1) > 1e-3) return null;
-    if (Math.abs(y2 - y1) > 1e-3 && Math.abs(x2 - x1) > 1e-3) return null;
-
-    const fillColor = gState.fill || "black";
+    const fillColor = gState.fill ?? "black";
     const rectAttrs = `x="${numFmt(minX)}" y="${numFmt(minY)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${fillColor}"`;
-    const needG =
-      gState.ctm.a !== 1 ||
-      gState.ctm.b !== 0 ||
-      gState.ctm.c !== 0 ||
-      gState.ctm.d !== 1 ||
-      gState.ctm.e !== 0 ||
-      gState.ctm.f !== 0;
-    const rect = needG
-      ? `<g transform="matrix(${numFmt(gState.ctm.a)} ${numFmt(gState.ctm.b)} ${numFmt(gState.ctm.c)} ${numFmt(gState.ctm.d)} ${numFmt(gState.ctm.e)} ${numFmt(gState.ctm.f)})"><rect ${rectAttrs}/></g>`
-      : `<rect ${rectAttrs}/>`;
+
+    const m = gState.ctm;
+    const needTransform = !isIdentityMatrix(gState.ctm);
+    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
+
+    const rect = needTransform ? `<g transform="${transform}"><rect ${rectAttrs}/></g>` : `<rect ${rectAttrs}/>`;
 
     return { rect, minX, minY, width, height };
   } catch {
