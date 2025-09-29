@@ -344,24 +344,22 @@ function unescapePostscriptString(str: string): string {
   return result;
 }
 
-function parseProcedure(tokens: Token[], startIndex: number): { proc: Token[]; nextIndex: number } {
-  const proc: Token[] = [];
+function parseProcedure(tokens: Token[], startIndex: number): { procedure: Token[]; nextIndex: number } {
+  const procedure: Token[] = [];
   let depth = 1;
-  let i = startIndex;
-  while (i < tokens.length && depth > 0) {
-    const t = tokens[i];
-    if (t.type === "brace" && t.value === "{") {
-      depth++;
-    } else if (t.type === "brace" && t.value === "}") {
+  let index = startIndex;
+
+  while (index < tokens.length && depth > 0) {
+    const token = tokens[index];
+    if (token.type === "brace" && token.value === "{") depth++;
+    else if (token.type === "brace" && token.value === "}") {
       depth--;
-      if (depth === 0) {
-        return { proc, nextIndex: i + 1 };
-      }
+      if (depth === 0) return { procedure, nextIndex: index + 1 };
     }
-    if (depth > 0) proc.push(t);
-    i++;
+    if (depth > 0) procedure.push(token);
+    index++;
   }
-  return { proc, nextIndex: i };
+  return { procedure, nextIndex: index };
 }
 
 function cloneGraphic(s: GraphicState): GraphicState {
@@ -464,8 +462,8 @@ function interpret(
     if (t.type === "number") stack.push(Number(t.value));
     else if (t.type === "string" || t.type === "name") stack.push(t.value);
     else if (t.type === "brace" && t.value === "{") {
-      const { proc, nextIndex } = parseProcedure(tokens, i + 1);
-      stack.push({ type: "procedure", body: proc });
+      const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
+      stack.push({ type: "procedure", body: procedure });
       i = nextIndex - 1;
     } else if (t.type === "operator") {
       const op = t.value;
