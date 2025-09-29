@@ -554,8 +554,8 @@ function interpret(
   const gStack: GraphicState[] = [];
   let gState = { ...DEFAULT_GRAPHIC_STATE };
   let path = new PathBuilder();
-  let currentX = 0,
-    currentY = 0;
+  let currentX = 0;
+  let currentY = 0;
   let clipIdCounter = 0;
 
   const operatorHandlers: Record<string, () => void> = {
@@ -926,17 +926,20 @@ function interpret(
   }
 
   for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    if (t.type === "number") stack.push(Number(t.value));
-    else if (t.type === "string") stack.push(t.value);
-    else if (t.type === "name") stack.push(t.value);
-    else if (t.type === "brace" && t.value === "{") {
+    const token = tokens[i];
+    const tokenType = token.type;
+    const tokenValue = token.value;
+
+    if (tokenType === "number") stack.push(Number(tokenValue));
+    else if (tokenType === "string") stack.push(tokenValue);
+    else if (tokenType === "name") stack.push(tokenValue);
+    else if (tokenType === "brace" && tokenValue === "{") {
       const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
       stack.push({ type: "procedure", body: procedure });
       i = nextIndex - 1;
       continue;
-    } else if (t.type === "operator") {
-      const op = t.value;
+    } else if (tokenType === "operator") {
+      const op = tokenValue;
 
       const dictVal = lookupName(op);
       if (dictVal !== undefined) {

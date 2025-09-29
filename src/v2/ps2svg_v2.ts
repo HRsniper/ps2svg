@@ -573,31 +573,36 @@ function interpret(
   const gStack: GraphicState[] = [];
   let gState = { ...DEFAULT_GRAPHIC_STATE };
   let path = new PathBuilder();
-  let currentX = 0,
-    currentY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let clipIdCounter = 0;
 
   for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    if (t.type === "number") stack.push(Number(t.value));
-    else if (t.type === "string" || t.type === "name") stack.push(t.value);
-    else if (t.type === "brace" && t.value === "{") {
+    const token = tokens[i];
+    const tokenType = token.type;
+    const tokenValue = token.value;
+
+    if (tokenType === "number") stack.push(Number(tokenValue));
+    else if (tokenType === "string" || tokenType === "name") stack.push(tokenValue);
+    else if (tokenType === "brace" && tokenValue === "{") {
       const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
       stack.push({ type: "procedure", body: procedure });
       i = nextIndex - 1;
-    } else if (t.type === "operator") {
-      const op = t.value;
+    } else if (tokenType === "operator") {
+      const op = tokenValue;
 
       // Verifica se é um procedimento definido pelo usuário
       const dictVal = lookupName(op);
       if (dictVal !== undefined) {
         if (dictVal && typeof dictVal === "object" && dictVal.type === "procedure") {
-          // Executa o procedimento
           executeProcedure(tokens, dictVal.body, i);
+          continue;
         } else {
           stack.push(dictVal);
+          continue;
         }
-        continue;
       }
+
       if (op === "neg") {
         const v = stack.pop();
         if (typeof v === "number") stack.push(-v);
