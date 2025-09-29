@@ -986,8 +986,10 @@ function flushPath(
 }
 
 function extractBoundingBox(ps: string) {
-  const m = /%%BoundingBox:\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/.exec(ps);
-  if (m) return { llx: Number(m[1]), lly: Number(m[2]), urx: Number(m[3]), ury: Number(m[4]) };
+  const match = /%%BoundingBox:\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/.exec(ps);
+  if (match) {
+    return { llx: Number(match[1]), lly: Number(match[2]), urx: Number(match[3]), ury: Number(match[4]) };
+  }
   return null;
 }
 

@@ -1003,8 +1003,8 @@ function interpret(
 }
 
 function extractBoundingBox(ps: string) {
-  const m = /%%BoundingBox:\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/.exec(ps);
-  return m ? { llx: Number(m[1]), lly: Number(m[2]), urx: Number(m[3]), ury: Number(m[4]) } : null;
+  const match = /%%BoundingBox:\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/.exec(ps);
+  return match ? { llx: Number(match[1]), lly: Number(match[2]), urx: Number(match[3]), ury: Number(match[4]) } : null;
 }
 
 function convertPostscriptToSVG(psText: string): string {
