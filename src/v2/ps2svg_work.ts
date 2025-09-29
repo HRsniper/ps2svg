@@ -567,47 +567,57 @@ function interpret(
       if (typeof v === "number") stack.push(-v);
       else if (typeof v === "string" && !isNaN(Number(v))) stack.push(-Number(v));
     },
+
     add: () => {
       const b = safePopNumber(stack);
       const a = safePopNumber(stack);
       stack.push(a + b);
     },
+
     sub: () => {
       const b = safePopNumber(stack);
       const a = safePopNumber(stack);
       stack.push(a - b);
     },
+
     mul: () => {
       const b = safePopNumber(stack, 1);
       const a = safePopNumber(stack, 1);
       stack.push(a * b);
     },
+
     div: () => {
       const b = safePopNumber(stack, 1);
       const a = safePopNumber(stack);
       stack.push(b === 0 ? 0 : a / b);
     },
+
     exch: () => {
       const b = stack.pop();
       const a = stack.pop();
       stack.push(b, a);
     },
+
     dict: () => {
       const size = safePopNumber(stack);
       stack.push({});
     },
+
     begin: () => {
       const d = stack.pop();
       dictStack.push(d && typeof d === "object" ? d : {});
     },
+
     end: () => {
       if (dictStack.length > 1) dictStack.pop();
     },
+
     def: () => {
       const value = stack.pop();
       const key = stack.pop();
       if (typeof key === "string") dictStack[dictStack.length - 1][key] = value;
     },
+
     setdash: () => {
       const phase = safePopNumber(stack);
       const arr = stack.pop();
@@ -615,44 +625,50 @@ function interpret(
       else if (typeof arr === "number") gState.dash = `${arr}`;
       else gState.dash = null;
     },
+
     newpath: () => {
       path.clear();
     },
+
     moveto: () => {
       const y = safePopNumber(stack);
       const x = safePopNumber(stack);
       currentX = x;
       currentY = y;
-      const p = gState.ctm.applyPoint(x, y);
-      path.moveTo(p.x, p.y);
+      const pos = gState.ctm.applyPoint(x, y);
+      path.moveTo(pos.x, pos.y);
       gState.lastTextPos = { x, y };
     },
+
     rmoveto: () => {
       const dy = safePopNumber(stack);
       const dx = safePopNumber(stack);
       currentX += dx;
       currentY += dy;
-      const p = gState.ctm.applyPoint(currentX, currentY);
-      path.moveTo(p.x, p.y);
+      const pos = gState.ctm.applyPoint(currentX, currentY);
+      path.moveTo(pos.x, pos.y);
       gState.lastTextPos = { x: currentX, y: currentY };
     },
+
     lineto: () => {
       const y = safePopNumber(stack);
       const x = safePopNumber(stack);
       currentX = x;
       currentY = y;
-      const p = gState.ctm.applyPoint(x, y);
-      path.lineTo(p.x, p.y);
+      const pos = gState.ctm.applyPoint(x, y);
+      path.lineTo(pos.x, pos.y);
       // Flush logic moved to main loop
     },
+
     rlineto: () => {
       const dy = safePopNumber(stack);
       const dx = safePopNumber(stack);
       currentX += dx;
       currentY += dy;
-      const p = gState.ctm.applyPoint(currentX, currentY);
-      path.lineTo(p.x, p.y);
+      const pos = gState.ctm.applyPoint(currentX, currentY);
+      path.lineTo(pos.x, pos.y);
     },
+
     curveto: () => {
       const y3 = safePopNumber(stack),
         x3 = safePopNumber(stack);
@@ -667,6 +683,7 @@ function interpret(
       const p3 = gState.ctm.applyPoint(x3, y3);
       path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     },
+
     rcurveto: () => {
       const dy3 = safePopNumber(stack),
         dx3 = safePopNumber(stack);
@@ -687,6 +704,7 @@ function interpret(
       const p3 = gState.ctm.applyPoint(x3, y3);
       path.curveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     },
+
     closepath: () => {
       path.close();
     },

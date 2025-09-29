@@ -613,30 +613,35 @@ function interpret(
         else stack.push(0);
         continue;
       }
+
       if (op === "add") {
         const b = safePopNumber(stack, 0);
         const a = safePopNumber(stack, 0);
         stack.push(a + b);
         continue;
       }
+
       if (op === "sub") {
         const b = safePopNumber(stack, 0);
         const a = safePopNumber(stack, 0);
         stack.push(a - b);
         continue;
       }
+
       if (op === "mul") {
         const b = safePopNumber(stack, 1);
         const a = safePopNumber(stack, 1);
         stack.push(a * b);
         continue;
       }
+
       if (op === "div") {
         const b = safePopNumber(stack, 1);
         const a = safePopNumber(stack, 0);
         stack.push(b === 0 ? 0 : a / b);
         continue;
       }
+
       if (op === "exch") {
         const b = stack.pop();
         const a = stack.pop();
@@ -644,72 +649,76 @@ function interpret(
         stack.push(a);
         continue;
       }
+
       if (op === "dict") {
         const size = safePopNumber(stack, 0);
         stack.push({});
         continue;
       }
+
       if (op === "begin") {
         const d = stack.pop();
         if (d && typeof d === "object") dictStack.push(d);
         else dictStack.push({});
         continue;
       }
+
       if (op === "end") {
         if (dictStack.length > 1) dictStack.pop();
         continue;
       }
+
       if (op === "def") {
         const value = stack.pop();
         const key = stack.pop();
-        if (typeof key === "string") {
-          dictStack[dictStack.length - 1][key] = value;
-        }
+        if (typeof key === "string") dictStack[dictStack.length - 1][key] = value;
         continue;
       }
+
       if (op === "setdash") {
         const phase = safePopNumber(stack, 0);
         const arr = stack.pop();
-        if (Array.isArray(arr)) {
-          gState.dash = arr.map(Number).join(",");
-        } else if (typeof arr === "number") {
-          gState.dash = `${arr}`;
-        } else {
-          gState.dash = null;
-        }
+        if (Array.isArray(arr)) gState.dash = arr.map(Number).join(",");
+        else if (typeof arr === "number") gState.dash = `${arr}`;
+        else gState.dash = null;
         continue;
       }
+
       if (op === "newpath") {
         path = path.reset();
         continue;
       }
+
       if (op === "moveto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
         currentX = x;
         currentY = y;
-        const p = gState.ctm.applyPoint(x, y);
-        path.moveTo(p.x, p.y);
+        const pos = gState.ctm.applyPoint(x, y);
+        path.moveTo(pos.x, pos.y);
         gState.lastTextPos = { x, y };
         continue;
       }
+
       if (op === "rmoveto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
         currentX += dx;
         currentY += dy;
-        const p = gState.ctm.applyPoint(currentX, currentY);
-        path.moveTo(p.x, p.y);
+        const pos = gState.ctm.applyPoint(currentX, currentY);
+        path.moveTo(pos.x, pos.y);
+        // path.moveToRel(pos.x, pos.y);
         gState.lastTextPos = { x: currentX, y: currentY };
         continue;
       }
+
       if (op === "lineto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
         currentX = x;
         currentY = y;
-        const p = gState.ctm.applyPoint(x, y);
-        path.lineTo(p.x, p.y);
+        const pos = gState.ctm.applyPoint(x, y);
+        path.lineTo(pos.x, pos.y);
 
         // Verifica se é uma linha simples (moveto + lineto seguido de moveto ou texto)
         if (
@@ -724,15 +733,18 @@ function interpret(
         }
         continue;
       }
+
       if (op === "rlineto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
         currentX += dx;
         currentY += dy;
-        const p = gState.ctm.applyPoint(currentX, currentY);
-        path.lineTo(p.x, p.y);
+        const pos = gState.ctm.applyPoint(currentX, currentY);
+        path.lineTo(pos.x, pos.y);
+        // path.lineToRel(pos.x, pos.y);
         continue;
       }
+
       if (op === "curveto") {
         const y3 = safePopNumber(stack, 0),
           x3 = safePopNumber(stack, 0);
