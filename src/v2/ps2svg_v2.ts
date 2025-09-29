@@ -703,33 +703,13 @@ function interpret(
         path.lineTo(p.x, p.y);
 
         // Verifica se é uma linha simples (moveto + lineto seguido de moveto ou texto)
-        // Olha alguns tokens à frente para decidir
-        let isSimpleLine = false;
-        if (path.parts.length === 2 && path.parts[0].startsWith("M ") && path.parts[1].startsWith("L ")) {
-          // Verifica os próximos tokens para ver se é uma linha isolada
-          for (let j = i + 1; j < Math.min(i + 5, tokens.length); j++) {
-            const nextToken = tokens[j];
-            if (nextToken.type === "operator") {
-              if (nextToken.value === "moveto" || nextToken.value === "show") {
-                isSimpleLine = true;
-                break;
-              }
-              if (
-                nextToken.value === "lineto" ||
-                nextToken.value === "closepath" ||
-                nextToken.value === "stroke" ||
-                nextToken.value === "fill" ||
-                nextToken.value === "eofill" ||
-                nextToken.value === "evenodd"
-              ) {
-                isSimpleLine = false;
-                break;
-              }
-            }
-          }
-        }
-
-        if (isSimpleLine) {
+        if (
+          path.parts.length === 2 &&
+          path.parts[0].startsWith("M ") &&
+          path.parts[1].startsWith("L ") &&
+          isSimpleLineAhead(tokens, i + 1)
+        ) {
+          // if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
           flushPath(path, gState, svgOut, StrokeOnly);
           path = new PathBuilder();
         }
