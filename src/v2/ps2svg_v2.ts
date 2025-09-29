@@ -1048,6 +1048,39 @@ function interpret(
   }
 }
 
+// (not implemented) Splits multi-subpath paths into single subpaths
+function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elementShapes: string[] }) {
+  // colocado no if (path.length() > 0) { ... }
+  // Se for multi-subpath acumulado, split manualmente em paths isolados (fallback)
+  const allParts = path.parts;
+  if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
+    let subPath = new PathBuilder();
+    subPath.reset();
+    for (const part of allParts) {
+      if (part.startsWith("M ")) {
+        if (subPath.length() > 0) {
+          flushPath(subPath, gState, svgOut, StrokeOnly);
+          subPath = subPath.reset();
+        }
+        subPath.parts.push(part);
+      } else if (part.startsWith("L ")) {
+        subPath.parts.push(part);
+        if (subPath.length() === 2) {
+          // Emit simple M L
+          flushPath(subPath, gState, svgOut, StrokeOnly);
+          subPath = subPath.reset();
+        }
+      }
+    }
+    if (subPath.length() > 0) flushPath(subPath, gState, svgOut, StrokeOnly);
+  } else {
+    // Legacy: Emit como um
+    const d = path.toPath();
+    svgOut.elementShapes.push(emitSVGPath(d, gState, StrokeOnly));
+  }
+  path.clear();
+}
+
 function extractBoundingBox(ps: string) {
   const match = /%%BoundingBox:\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/.exec(ps);
   if (match) {

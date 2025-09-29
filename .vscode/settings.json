@@ -11,12 +11,14 @@
     "linecap",
     "linejoin",
     "newpath",
+    "PLRM",
     "prestart",
     "rcurveto",
     "rlineto",
     "rmoveto",
     "scalefont",
     "setcmykcolor",
+    "setcolorspace",
     "setdash",
     "setfont",
     "setgray",
@@ -24,6 +26,7 @@
     "setlinejoin",
     "setlinewidth",
     "setrgbcolor",
+    "shfill",
     "showpage"
   ]
 }
