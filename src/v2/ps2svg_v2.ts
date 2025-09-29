@@ -545,19 +545,6 @@ function interpret(
   let currentX = 0,
     currentY = 0;
 
-  function flushPathAsStroke(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
-    if (path.length() === 0) return;
-    const d = path.toPath();
-    svgOut.elementShapes.push(emitSVGPath(d, g, false));
-    path.clear();
-  }
-
-  function flushPathAsFill(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
-    if (path.length() === 0) return;
-    const d = path.toPath();
-    svgOut.elementShapes.push(emitSVGPath(d, g, true));
-  }
-
   // Função para executar um procedimento (insere tokens no fluxo atual)
   function executeProcedure(procTokens: Token[], currentIndex: number) {
     // Insere os tokens do procedimento na posição atual
@@ -978,6 +965,22 @@ function interpret(
   if (path.length() > 0) {
     flushPathAsStroke(path, gState, svgOut);
   }
+}
+
+function flushPathAsStroke(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
+  if (path.length() === 0) return;
+  const d = path.toPath();
+  const pathStr = emitSVGPath(d, g, false);
+  svgOut.elementShapes.push(pathStr);
+  path.clear();
+}
+
+function flushPathAsFill(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
+  if (path.length() === 0) return;
+  const d = path.toPath();
+  const pathStr = emitSVGPath(d, g, true);
+  svgOut.elementShapes.push(pathStr);
+  path.clear();
 }
 
 function extractBoundingBox(ps: string) {
