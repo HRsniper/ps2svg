@@ -160,14 +160,14 @@ class PathBuilder {
     this.parts.push(`t ${numFmt(dx)} ${numFmt(dy)}`);
   }
 
-  ellipseTo(rx: number, ry: number, rotation: number, arc: number, sweep: number, x: number, y: number) {
+  ellipseTo(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, x: number, y: number) {
     this.parts.push(
-      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
+      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
     );
   }
-  ellipseToRel(rx: number, ry: number, rotation: number, arc: number, sweep: number, dx: number, dy: number) {
+  ellipseToRel(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, dx: number, dy: number) {
     this.parts.push(
-      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
+      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
     );
   }
 
@@ -764,31 +764,41 @@ function interpret(
         tx = safePopNumber(stack);
       gState.ctm = gState.ctm.translate(tx, ty);
     },
+
     scale: () => {
       const sy = safePopNumber(stack, 1),
         sx = safePopNumber(stack, 1);
       gState.ctm = gState.ctm.scale(sx, sy);
     },
+
     rotate: () => {
-      const ang = safePopNumber(stack);
-      gState.ctm = gState.ctm.rotate(ang);
+      const angle = safePopNumber(stack);
+      gState.ctm = gState.ctm.rotate(angle);
     },
+
     gsave: () => {
       gStack.push(cloneGraphic(gState));
     },
+
     grestore: () => {
+      if (gStack.length === 0) return;
       const st = gStack.pop();
-      if (st) {
-        if (st.clipStack.length > gState.clipStack.length) {
-          for (let j = gState.clipStack.length; j < st.clipStack.length; j++) {
-            const clipPath = st.clipStack[j];
+      if (!st) return;
+
+      if (st.clipStack.length > gState.clipStack.length) {
+        for (let j = gState.clipStack.length; j < st.clipStack.length; j++) {
+          const clipPath = st.clipStack[j];
+          if (clipPath) {
             svgOut.defs.push(`<clipPath id="clip${clipIdCounter++}"><path d="${clipPath}" /></clipPath>`);
           }
         }
-        gState = st;
       }
+
+      gState = st;
     },
+
     arc: () => handleArc(),
+
     clip: () => {
       if (path.length() > 0) {
         const clipPath = path.toPath();
@@ -919,17 +929,25 @@ function interpret(
       r = safePopNumber(stack);
     const y = safePopNumber(stack),
       x = safePopNumber(stack);
+
     const start = anglePoint(x, y, r, ang1);
     const end = anglePoint(x, y, r, ang2);
-    const scaleX = Math.hypot(gState.ctm.a, gState.ctm.b) || 1;
-    const scaleY = Math.hypot(gState.ctm.c, gState.ctm.d) || 1;
+
+    const { a, b, c, d, e, f } = gState.ctm;
+
+    const scaleX = Math.hypot(a, b) || 1;
+    const scaleY = Math.hypot(c, d) || 1;
+
     const rx = Math.abs(r * scaleX),
       ry = Math.abs(r * scaleY);
+
     const pStart = gState.ctm.applyPoint(start.x, start.y);
     const pEnd = gState.ctm.applyPoint(end.x, end.y);
+
     const delta = Math.abs((((ang2 - ang1) % 360) + 360) % 360);
-    const large = delta > 180 ? 1 : 0;
+    const largeArc = delta > 180 ? 1 : 0;
     const sweep = ang2 - ang1 > 0 ? 1 : 0;
+
     if (Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6) {
       const cP = gState.ctm.applyPoint(x, y);
       const avgR = (rx + ry) / 2;
@@ -937,7 +955,7 @@ function interpret(
         `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"${gState.dash ? ` stroke-dasharray="${gState.dash}"` : ""}/>`
       );
     } else {
-      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${large} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
       svgOut.elementShapes.push(emitSVGPath(d, gState, false, true));
     }
   }

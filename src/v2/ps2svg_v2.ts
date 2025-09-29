@@ -160,14 +160,14 @@ class PathBuilder {
     this.parts.push(`t ${numFmt(dx)} ${numFmt(dy)}`);
   }
 
-  ellipseTo(rx: number, ry: number, rotation: number, arc: number, sweep: number, x: number, y: number) {
+  ellipseTo(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, x: number, y: number) {
     this.parts.push(
-      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
+      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
     );
   }
-  ellipseToRel(rx: number, ry: number, rotation: number, arc: number, sweep: number, dx: number, dy: number) {
+  ellipseToRel(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, dx: number, dy: number) {
     this.parts.push(
-      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(arc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
+      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
     );
   }
 
@@ -567,6 +567,81 @@ function executeProcedure(tokens: Token[], procTokens: Token[], currentIndex: nu
   tokens.splice(currentIndex + 1, 0, ...procTokens);
 }
 
+function flushPath(
+  path: PathBuilder,
+  g: GraphicState,
+  svgOut: { elementShapes: string[] },
+  mode: { stroke: boolean; fill: boolean }
+) {
+  if (path.length() === 0) return;
+  const d = path.toPath();
+  const pathStr = emitSVGPath(d, g, mode);
+  svgOut.elementShapes.push(pathStr);
+  path.clear();
+}
+
+function handleArc(
+  stack: (number | string | any)[],
+  gState: GraphicState,
+  svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] }
+) {
+  const ang2 = safePopNumber(stack, 0);
+  const ang1 = safePopNumber(stack, 0);
+  const r = safePopNumber(stack, 0);
+  const y = safePopNumber(stack, 0);
+  const x = safePopNumber(stack, 0);
+
+  const start = anglePoint(x, y, r, ang1);
+  const end = anglePoint(x, y, r, ang2);
+
+  const { a, b, c, d, e, f } = gState.ctm;
+
+  const scaleX = Math.hypot(a, b) || 1;
+  const scaleY = Math.hypot(c, d) || 1;
+
+  const rx = Math.abs(r * scaleX);
+  const ry = Math.abs(r * scaleY);
+
+  const pStart = gState.ctm.applyPoint(start.x, start.y);
+  const pEnd = gState.ctm.applyPoint(end.x, end.y);
+
+  const delta = (((ang2 - ang1) % 360) + 360) % 360;
+  const largeArc = delta > 180 ? 1 : 0;
+  const sweep = ang2 - ang1 > 0 ? 1 : 0;
+
+  if (Math.abs(delta) < 1e-6) {
+    const cP = gState.ctm.applyPoint(x, y);
+    const avgR = (rx + ry) / 2;
+    if (Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6) {
+      svgOut.elementShapes.push(
+        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
+      );
+    } else {
+      const midAng = ang1 + 180;
+      const mid = anglePoint(x, y, r, midAng);
+      const pMid = gState.ctm.applyPoint(mid.x, mid.y);
+      const d1 = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pMid.y)}`;
+      const d2 = `M ${numFmt(pMid.x)} ${numFmt(pMid.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+      svgOut.elementShapes.push(
+        `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
+      );
+      svgOut.elementShapes.push(
+        `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
+      );
+    }
+  } else {
+    const large = delta > 180 ? 1 : 0;
+    const sweep = delta > 0 ? 1 : 0;
+    if (!(Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6)) {
+      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${large} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+      const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
+      svgOut.elementShapes.push(
+        `<path d="${d}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
+      );
+    }
+  }
+}
+
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
@@ -578,7 +653,7 @@ function interpret(
   let path = new PathBuilder();
   let currentX = 0;
   let currentY = 0;
-  const clipIdCounter = 0;
+  let clipIdCounter = 0;
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
@@ -866,78 +941,46 @@ function interpret(
         gState.ctm = gState.ctm.translate(tx, ty);
         continue;
       }
+
       if (op === "scale") {
         const sy = safePopNumber(stack, 1);
         const sx = safePopNumber(stack, 1);
         gState.ctm = gState.ctm.scale(sx, sy);
         continue;
       }
+
       if (op === "rotate") {
-        const ang = safePopNumber(stack, 0);
-        gState.ctm = gState.ctm.rotate(ang);
+        const angle = safePopNumber(stack, 0);
+        gState.ctm = gState.ctm.rotate(angle);
         continue;
       }
+
       if (op === "gsave") {
         gStack.push(cloneGraphic(gState));
         continue;
       }
+
       if (op === "grestore") {
+        if (gStack.length === 0) return;
         const st = gStack.pop();
-        if (st) gState = st;
-        continue;
-      }
-      if (op === "arc") {
-        const ang2 = safePopNumber(stack, 0);
-        const ang1 = safePopNumber(stack, 0);
-        const r = safePopNumber(stack, 0);
-        const y = safePopNumber(stack, 0);
-        const x = safePopNumber(stack, 0);
-        const start = anglePoint(x, y, r, ang1);
-        const end = anglePoint(x, y, r, ang2);
-        const a = gState.ctm.a,
-          b = gState.ctm.b,
-          c = gState.ctm.c,
-          d = gState.ctm.d;
-        const scaleX = Math.hypot(a, b) || 1;
-        const scaleY = Math.hypot(c, d) || 1;
-        const rx = Math.abs(r * scaleX);
-        const ry = Math.abs(r * scaleY);
-        const pStart = gState.ctm.applyPoint(start.x, start.y);
-        const pEnd = gState.ctm.applyPoint(end.x, end.y);
-        const delta = (((ang2 - ang1) % 360) + 360) % 360;
-        if (Math.abs(delta) < 1e-6) {
-          const cP = gState.ctm.applyPoint(x, y);
-          const avgR = (rx + ry) / 2;
-          if (Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6) {
-            svgOut.elementShapes.push(
-              `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
-            );
-          } else {
-            const midAng = ang1 + 180;
-            const mid = anglePoint(x, y, r, midAng);
-            const pMid = gState.ctm.applyPoint(mid.x, mid.y);
-            const d1 = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pMid.y)}`;
-            const d2 = `M ${numFmt(pMid.x)} ${numFmt(pMid.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-            svgOut.elementShapes.push(
-              `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
-            );
-            svgOut.elementShapes.push(
-              `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"/>`
-            );
-          }
-        } else {
-          const large = delta > 180 ? 1 : 0;
-          const sweep = delta > 0 ? 1 : 0;
-          if (!(Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6)) {
-            const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${large} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-            const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
-            svgOut.elementShapes.push(
-              `<path d="${d}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
-            );
+        if (!st) return;
+
+        if (st.clipStack.length > gState.clipStack.length) {
+          for (let j = gState.clipStack.length; j < st.clipStack.length; j++) {
+            const clipPath = st.clipStack[j];
+            svgOut.defs.push(`<clipPath id="clip${clipIdCounter++}"><path d="${clipPath}" /></clipPath>`);
           }
         }
+
+        gState = st;
         continue;
       }
+
+      if (op === "arc") {
+        handleArc(stack, gState, svgOut);
+        continue;
+      }
+
       if (op === "clip") {
         // apenas marca clipStack, não aplica ainda
         gState.clipStack.push(path.toPath());
@@ -1003,19 +1046,6 @@ function interpret(
   if (path.length() > 0) {
     flushPath(path, gState, svgOut, StrokeOnly);
   }
-}
-
-function flushPath(
-  path: PathBuilder,
-  g: GraphicState,
-  svgOut: { elementShapes: string[] },
-  mode: { stroke: boolean; fill: boolean }
-) {
-  if (path.length() === 0) return;
-  const d = path.toPath();
-  const pathStr = emitSVGPath(d, g, mode);
-  svgOut.elementShapes.push(pathStr);
-  path.clear();
 }
 
 function extractBoundingBox(ps: string) {
