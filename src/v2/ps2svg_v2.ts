@@ -1,5 +1,5 @@
 import * as fs from "node:fs";
-import { cmyk2rgb, color2rgb } from "../color2rgb.js";
+import { cmyk2rgb, color2rgb, gray2rgb } from "../color2rgb.js";
 // import { fileInputName, fileOutputName } from "./cli.js";
 
 console.time("Execution time");
@@ -578,7 +578,7 @@ function interpret(
   let path = new PathBuilder();
   let currentX = 0;
   let currentY = 0;
-  let clipIdCounter = 0;
+  const clipIdCounter = 0;
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
@@ -822,10 +822,9 @@ function interpret(
 
       if (op === "setgray") {
         const v = safePopNumber(stack, 0);
-        const gray = Math.round(v * 255);
-        const s = `rgb(${gray},${gray},${gray})`;
-        gState.fill = s;
-        gState.stroke = s;
+        const rgb = gray2rgb(v).toString();
+        gState.fill = rgb;
+        gState.stroke = rgb;
         continue;
       }
 
@@ -839,22 +838,28 @@ function interpret(
         gState.stroke = rgb;
         continue;
       }
+
       if (op === "setlinewidth") {
         gState.strokeWidth = safePopNumber(stack, 1);
         continue;
       }
+
       if (op === "setlinecap") {
         const v = stack.pop();
-        if (typeof v === "number") gState.lineCap = v === 0 ? "butt" : v === 1 ? "round" : "square";
+        if (typeof v === "number")
+          gState.lineCap = v === 0 ? "butt" : v === 1 ? "round" : "square"; // fallback
         else if (typeof v === "string") gState.lineCap = v;
         continue;
       }
+
       if (op === "setlinejoin") {
         const v = stack.pop();
-        if (typeof v === "number") gState.lineJoin = v === 0 ? "miter" : v === 1 ? "round" : "bevel";
+        if (typeof v === "number")
+          gState.lineJoin = v === 0 ? "miter" : v === 1 ? "round" : v === 2 ? "bevel" : v === 3 ? "arcs" : "miter"; // fallback
         else if (typeof v === "string") gState.lineJoin = v;
         continue;
       }
+
       if (op === "translate") {
         const ty = safePopNumber(stack, 0);
         const tx = safePopNumber(stack, 0);

@@ -1,5 +1,5 @@
 import * as fs from "node:fs";
-import { cmyk2rgb, color2rgb } from "../color2rgb.js";
+import { cmyk2rgb, color2rgb, gray2rgb } from "../color2rgb.js";
 import { fileInputName, fileOutputName } from "./cli.js";
 
 console.time("Execution time");
@@ -729,10 +729,9 @@ function interpret(
 
     setgray: () => {
       const v = safePopNumber(stack);
-      const gray = Math.round(v * 255);
-      const s = `rgb(${gray}, ${gray}, ${gray})`;
-      gState.fill = s;
-      gState.stroke = s;
+      const rgb = gray2rgb(v).toString();
+      gState.fill = rgb;
+      gState.stroke = rgb;
     },
 
     setcmykcolor: () => {
@@ -744,17 +743,22 @@ function interpret(
       gState.fill = rgb;
       gState.stroke = rgb;
     },
+
     setlinewidth: () => {
       gState.strokeWidth = safePopNumber(stack, 1);
     },
+
     setlinecap: () => {
       const v = stack.pop();
-      if (typeof v === "number") gState.lineCap = v === 0 ? "butt" : v === 1 ? "round" : "square";
+      if (typeof v === "number") gState.lineCap = v === 0 ? "butt" : v === 1 ? "round" : "square"; // fallback
     },
+
     setlinejoin: () => {
       const v = stack.pop();
-      if (typeof v === "number") gState.lineJoin = v === 0 ? "miter" : v === 1 ? "round" : "bevel";
+      if (typeof v === "number")
+        gState.lineJoin = v === 0 ? "miter" : v === 1 ? "round" : v === 2 ? "bevel" : v === 3 ? "arcs" : "miter"; // fallback
     },
+
     translate: () => {
       const ty = safePopNumber(stack),
         tx = safePopNumber(stack);
