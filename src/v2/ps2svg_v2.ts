@@ -203,6 +203,12 @@ interface GraphicState {
   lastTextPos: { x: number; y: number } | null;
 }
 
+type PostscriptValue = any;
+
+interface PostscriptDict {
+  [key: string]: PostscriptValue;
+}
+
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " "); // Remove comments
   const numRe = /-?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][+-]?\d+)?/y; // 12 .2 3e4
@@ -396,10 +402,10 @@ function numFmt(n: number): string {
   return n.toFixed(3).replace(/\.?0+$/, "");
 }
 
-const globalDict: Record<string, any> = {};
-const dictStack: Record<string, any>[] = [globalDict];
+const globalDict: PostscriptDict = {};
+const dictStack: PostscriptDict[] = [globalDict];
 
-function lookupName(name: string) {
+function lookupName(name: string): PostscriptValue | undefined {
   for (let i = dictStack.length - 1; i >= 0; --i) {
     if (name in dictStack[i]) return dictStack[i][name];
   }
