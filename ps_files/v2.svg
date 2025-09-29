@@ -13,7 +13,7 @@
 <circle cx="250" cy="300" r="30" fill="none" stroke="rgb(51, 153, 204)" stroke-width="1"/>
 <circle cx="350" cy="300" r="20" fill="none" stroke="rgb(128,128,128)" stroke-width="1"/>
 <circle cx="300" cy="350" r="20" fill="none" stroke="rgb(255, 128, 128)" stroke-width="1"/>
-<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/>
+<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 142.426 142.426 A 60 30 0 0 1 57.574 57.574" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5"/>
 <path d="M 57.574 57.574 A 60 30 0 0 1 142.426 142.426" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5"/>
 <!-- image/imagemask not implemented --><image x="100" y="100" width="50" height="50" href="placeholder.png" />

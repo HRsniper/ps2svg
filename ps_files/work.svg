@@ -14,7 +14,7 @@
 <path d="" fill-rule="nonzero" fill="rgb(128, 128, 128)" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <circle cx="300" cy="350" r="20" fill="none" stroke="rgb(255, 128, 128)" stroke-width="1"/>
 <path d="" fill-rule="nonzero" fill="rgb(255, 128, 128)" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
-<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/>
+<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 <circle cx="100" cy="100" r="45" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-dasharray="2"/>
 <!-- image placeholder -->
       <image x="0" y="0" width="50" height="50" href="data:image/png;base64,placeholder" />

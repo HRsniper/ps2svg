@@ -548,7 +548,8 @@ function interpret(
   function flushPathAsStroke(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
     if (path.length() === 0) return;
     const d = path.toPath();
-    svgOut.elementShapes.push(emitSVGPath(d, g, false, true));
+    svgOut.elementShapes.push(emitSVGPath(d, g, false));
+    path.clear();
   }
 
   function flushPathAsFill(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {

@@ -852,7 +852,7 @@ function interpret(
       return;
     }
     const d = pb.toPath();
-    out.elementShapes.push(emitSVGPath(d, gs, false, true));
+    out.elementShapes.push(emitSVGPath(d, gs, false));
     pb.clear();
   }
 
