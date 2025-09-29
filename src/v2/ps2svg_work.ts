@@ -406,29 +406,38 @@ function lookupName(name: string): PostscriptValue | undefined {
   return undefined;
 }
 
+function isIdentityMatrix(m: Matrix): boolean {
+  return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
+}
+
 function emitSVGPath(d: string, g: GraphicState, fillMode = false, addDash = false, isClip = false): string {
+  const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
+
   const strokeColor = g.stroke ?? "black";
   const fillColor = fillMode ? (g.fill ?? "black") : "none";
   const strokeAttr = fillMode ? "none" : strokeColor;
-  const dashAttr = addDash && g.dash ? ` stroke-dasharray="${g.dash}"` : "";
-  const pathAttrs = `d="${d}" fill="${fillColor}" stroke="${strokeAttr}" stroke-width="${g.strokeWidth}" stroke-linecap="${g.lineCap}" stroke-linejoin="${g.lineJoin}"${dashAttr}`;
+  const strokeWidthAttr = g.strokeWidth ? `stroke-width="${g.strokeWidth}"` : "";
+  const strokeLineCapAttr = g.lineCap ? `stroke-linecap="${g.lineCap}"` : "";
+  const strokeLineJoinAttr = g.lineJoin ? `stroke-linejoin="${g.lineJoin}"` : "";
+  const dashAttr = addDash && g.dash ? `stroke-dasharray="${g.dash}"` : "";
+  const pathAttrs = [
+    `d="${d}"`,
+    `fill="${fillColor}"`,
+    `stroke="${strokeAttr}"`,
+    strokeWidthAttr,
+    strokeLineCapAttr,
+    strokeLineJoinAttr,
+    dashAttr
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  let clipId = "";
-  if (g.clipStack.length > 0) {
-    clipId = ` clip-path="url(#clip${g.clipStack.length - 1})"`;
-  }
+  const clipId = g.clipStack.length > 0 ? ` clip-path="url(#clip${g.clipStack.length - 1})"` : "";
 
-  const needGroup =
-    g.ctm.a !== 1 ||
-    g.ctm.b !== 0 ||
-    g.ctm.c !== 0 ||
-    g.ctm.d !== 1 ||
-    g.ctm.e !== 0 ||
-    g.ctm.f !== 0 ||
-    g.clipStack.length > 0;
   if (needGroup) {
     const m = g.ctm;
-    return `<g transform="matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})"${clipId}><path ${pathAttrs}/></g>`;
+    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
+    return `<g transform="${transform}"${clipId}><path ${pathAttrs}/></g>`;
   } else {
     return `<path ${pathAttrs}${clipId}/>`;
   }
