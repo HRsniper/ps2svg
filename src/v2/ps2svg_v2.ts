@@ -362,6 +362,20 @@ function parseProcedure(tokens: Token[], startIndex: number): { procedure: Token
   return { procedure, nextIndex: index };
 }
 
+const DEFAULT_GRAPHIC_STATE: GraphicState = {
+  ctm: new Matrix(),
+  fill: "black",
+  stroke: null,
+  strokeWidth: 1,
+  lineCap: "butt",
+  lineJoin: "miter",
+  font: "Arial, sans-serif",
+  fontSize: 12,
+  clipStack: [],
+  dash: null,
+  lastTextPos: null
+};
+
 function cloneGraphic(s: GraphicState): GraphicState {
   return {
     ctm: Object.assign(new Matrix(), s.ctm),
@@ -378,8 +392,8 @@ function cloneGraphic(s: GraphicState): GraphicState {
   };
 }
 
-function numFmt(n: number) {
-  return Math.round(n * 1000) / 1000;
+function numFmt(n: number): string {
+  return n.toFixed(3).replace(/\.?0+$/, "");
 }
 
 const globalDict: Record<string, any> = {};
@@ -412,19 +426,7 @@ function interpret(
 ) {
   const stack: (number | string | any)[] = [];
   const gStack: GraphicState[] = [];
-  let gState: GraphicState = {
-    ctm: new Matrix(),
-    fill: null,
-    stroke: "black",
-    strokeWidth: 1,
-    lineCap: "butt",
-    lineJoin: "miter",
-    font: "Helvetica",
-    fontSize: 12,
-    clipStack: [],
-    dash: null,
-    lastTextPos: null
-  };
+  let gState = { ...DEFAULT_GRAPHIC_STATE };
   let path = new PathBuilder();
   let currentX = 0,
     currentY = 0;

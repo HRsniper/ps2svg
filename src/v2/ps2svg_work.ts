@@ -356,14 +356,14 @@ function parseProcedure(tokens: Token[], startIndex: number): { procedure: Token
   return { procedure, nextIndex: index };
 }
 
-const DEFAULT_GSTATE: GraphicState = {
+const DEFAULT_GRAPHIC_STATE: GraphicState = {
   ctm: new Matrix(),
-  fill: null,
-  stroke: "black",
+  fill: "black",
+  stroke: null,
   strokeWidth: 1,
   lineCap: "butt",
   lineJoin: "miter",
-  font: "Helvetica",
+  font: "Arial, sans-serif",
   fontSize: 12,
   clipStack: [],
   dash: null,
@@ -553,7 +553,7 @@ function interpret(
 ) {
   const stack: (number | string | any)[] = [];
   const gStack: GraphicState[] = [];
-  let gState = { ...DEFAULT_GSTATE };
+  let gState = { ...DEFAULT_GRAPHIC_STATE };
   let path = new PathBuilder();
   let currentX = 0,
     currentY = 0;
