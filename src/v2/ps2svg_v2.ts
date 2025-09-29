@@ -606,8 +606,6 @@ function handleArc(
   const pEnd = gState.ctm.applyPoint(end.x, end.y);
 
   const delta = (((ang2 - ang1) % 360) + 360) % 360;
-  const largeArc = delta > 180 ? 1 : 0;
-  const sweep = ang2 - ang1 > 0 ? 1 : 0;
 
   if (Math.abs(delta) < 1e-6) {
     const cP = gState.ctm.applyPoint(x, y);
@@ -630,10 +628,10 @@ function handleArc(
       );
     }
   } else {
-    const large = delta > 180 ? 1 : 0;
+    const largeArc = delta > 180 ? 1 : 0;
     const sweep = delta > 0 ? 1 : 0;
     if (!(Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6)) {
-      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${large} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
       const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
       svgOut.elementShapes.push(
         `<path d="${d}" fill="none" stroke="${gState.stroke ?? "none"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`

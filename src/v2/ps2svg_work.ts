@@ -944,11 +944,13 @@ function interpret(
     const pStart = gState.ctm.applyPoint(start.x, start.y);
     const pEnd = gState.ctm.applyPoint(end.x, end.y);
 
-    const delta = Math.abs((((ang2 - ang1) % 360) + 360) % 360);
+    const delta = (((ang2 - ang1) % 360) + 360) % 360;
     const largeArc = delta > 180 ? 1 : 0;
     const sweep = ang2 - ang1 > 0 ? 1 : 0;
 
-    if (Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6) {
+    const isArcClosed = Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6;
+
+    if (isArcClosed) {
       const cP = gState.ctm.applyPoint(x, y);
       const avgR = (rx + ry) / 2;
       svgOut.elementShapes.push(
