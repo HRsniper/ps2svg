@@ -523,6 +523,16 @@ function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
+function safePopNumber(stack: any[], def = 0): number {
+  const v = stack.pop();
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return isFinite(n) ? n : def;
+  }
+  return def;
+}
+
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
@@ -534,16 +544,6 @@ function interpret(
   let path = new PathBuilder();
   let currentX = 0,
     currentY = 0;
-
-  function safePopNumber(def = 0) {
-    const v = stack.pop();
-    if (typeof v === "number") return v;
-    if (typeof v === "string") {
-      const n = Number(v);
-      return isFinite(n) ? n : def;
-    }
-    return def;
-  }
 
   function flushPathAsStroke(path: PathBuilder, g: GraphicState, svgOut: { elementShapes: string[] }) {
     if (path.length() === 0) return;
@@ -594,26 +594,26 @@ function interpret(
         continue;
       }
       if (op === "add") {
-        const b = safePopNumber(0);
-        const a = safePopNumber(0);
+        const b = safePopNumber(stack, 0);
+        const a = safePopNumber(stack, 0);
         stack.push(a + b);
         continue;
       }
       if (op === "sub") {
-        const b = safePopNumber(0);
-        const a = safePopNumber(0);
+        const b = safePopNumber(stack, 0);
+        const a = safePopNumber(stack, 0);
         stack.push(a - b);
         continue;
       }
       if (op === "mul") {
-        const b = safePopNumber(1);
-        const a = safePopNumber(1);
+        const b = safePopNumber(stack, 1);
+        const a = safePopNumber(stack, 1);
         stack.push(a * b);
         continue;
       }
       if (op === "div") {
-        const b = safePopNumber(1);
-        const a = safePopNumber(0);
+        const b = safePopNumber(stack, 1);
+        const a = safePopNumber(stack, 0);
         stack.push(b === 0 ? 0 : a / b);
         continue;
       }
@@ -625,7 +625,7 @@ function interpret(
         continue;
       }
       if (op === "dict") {
-        const size = safePopNumber(0);
+        const size = safePopNumber(stack, 0);
         stack.push({});
         continue;
       }
@@ -648,7 +648,7 @@ function interpret(
         continue;
       }
       if (op === "setdash") {
-        const phase = safePopNumber(0);
+        const phase = safePopNumber(stack, 0);
         const arr = stack.pop();
         if (Array.isArray(arr)) {
           gState.dash = arr.map(Number).join(",");
@@ -664,8 +664,8 @@ function interpret(
         continue;
       }
       if (op === "moveto") {
-        const y = safePopNumber(0);
-        const x = safePopNumber(0);
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
         currentX = x;
         currentY = y;
         const p = gState.ctm.applyPoint(x, y);
@@ -674,8 +674,8 @@ function interpret(
         continue;
       }
       if (op === "rmoveto") {
-        const dy = safePopNumber(0);
-        const dx = safePopNumber(0);
+        const dy = safePopNumber(stack, 0);
+        const dx = safePopNumber(stack, 0);
         currentX += dx;
         currentY += dy;
         const p = gState.ctm.applyPoint(currentX, currentY);
@@ -684,8 +684,8 @@ function interpret(
         continue;
       }
       if (op === "lineto") {
-        const y = safePopNumber(0);
-        const x = safePopNumber(0);
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
         currentX = x;
         currentY = y;
         const p = gState.ctm.applyPoint(x, y);
@@ -725,8 +725,8 @@ function interpret(
         continue;
       }
       if (op === "rlineto") {
-        const dy = safePopNumber(0);
-        const dx = safePopNumber(0);
+        const dy = safePopNumber(stack, 0);
+        const dx = safePopNumber(stack, 0);
         currentX += dx;
         currentY += dy;
         const p = gState.ctm.applyPoint(currentX, currentY);
@@ -734,12 +734,12 @@ function interpret(
         continue;
       }
       if (op === "curveto") {
-        const y3 = safePopNumber(0),
-          x3 = safePopNumber(0);
-        const y2 = safePopNumber(0),
-          x2 = safePopNumber(0);
-        const y1 = safePopNumber(0),
-          x1 = safePopNumber(0);
+        const y3 = safePopNumber(stack, 0),
+          x3 = safePopNumber(stack, 0);
+        const y2 = safePopNumber(stack, 0),
+          x2 = safePopNumber(stack, 0);
+        const y1 = safePopNumber(stack, 0),
+          x1 = safePopNumber(stack, 0);
         currentX = x3;
         currentY = y3;
         const p1 = gState.ctm.applyPoint(x1, y1);
@@ -749,12 +749,12 @@ function interpret(
         continue;
       }
       if (op === "rcurveto") {
-        const dy3 = safePopNumber(0),
-          dx3 = safePopNumber(0);
-        const dy2 = safePopNumber(0),
-          dx2 = safePopNumber(0);
-        const dy1 = safePopNumber(0),
-          dx1 = safePopNumber(0);
+        const dy3 = safePopNumber(stack, 0),
+          dx3 = safePopNumber(stack, 0);
+        const dy2 = safePopNumber(stack, 0),
+          dx2 = safePopNumber(stack, 0);
+        const dy1 = safePopNumber(stack, 0),
+          dx1 = safePopNumber(stack, 0);
         const x1 = currentX + dx1,
           y1 = currentY + dy1;
         const x2 = currentX + dx2,
@@ -793,16 +793,16 @@ function interpret(
         continue;
       }
       if (op === "setrgbcolor") {
-        const b = safePopNumber(0);
-        const g = safePopNumber(0);
-        const r = safePopNumber(0);
+        const b = safePopNumber(stack, 0);
+        const g = safePopNumber(stack, 0);
+        const r = safePopNumber(stack, 0);
         const rgb = color2rgb([r, g, b]).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
         continue;
       }
       if (op === "setgray") {
-        const v = safePopNumber(0);
+        const v = safePopNumber(stack, 0);
         const gray = Math.round(v * 255);
         const s = `rgb(${gray},${gray},${gray})`;
         gState.fill = s;
@@ -810,17 +810,17 @@ function interpret(
         continue;
       }
       if (op === "setcmykcolor") {
-        const k = safePopNumber(0);
-        const y = safePopNumber(0);
-        const m = safePopNumber(0);
-        const c = safePopNumber(0);
+        const k = safePopNumber(stack, 0);
+        const y = safePopNumber(stack, 0);
+        const m = safePopNumber(stack, 0);
+        const c = safePopNumber(stack, 0);
         const rgb = cmyk2rgb([c, m, y, k]).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
         continue;
       }
       if (op === "setlinewidth") {
-        gState.strokeWidth = safePopNumber(1);
+        gState.strokeWidth = safePopNumber(stack, 1);
         continue;
       }
       if (op === "setlinecap") {
@@ -836,19 +836,19 @@ function interpret(
         continue;
       }
       if (op === "translate") {
-        const ty = safePopNumber(0);
-        const tx = safePopNumber(0);
+        const ty = safePopNumber(stack, 0);
+        const tx = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.translate(tx, ty);
         continue;
       }
       if (op === "scale") {
-        const sy = safePopNumber(1);
-        const sx = safePopNumber(1);
+        const sy = safePopNumber(stack, 1);
+        const sx = safePopNumber(stack, 1);
         gState.ctm = gState.ctm.scale(sx, sy);
         continue;
       }
       if (op === "rotate") {
-        const ang = safePopNumber(0);
+        const ang = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.rotate(ang);
         continue;
       }
@@ -862,11 +862,11 @@ function interpret(
         continue;
       }
       if (op === "arc") {
-        const ang2 = safePopNumber(0);
-        const ang1 = safePopNumber(0);
-        const r = safePopNumber(0);
-        const y = safePopNumber(0);
-        const x = safePopNumber(0);
+        const ang2 = safePopNumber(stack, 0);
+        const ang1 = safePopNumber(stack, 0);
+        const r = safePopNumber(stack, 0);
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
         const start = anglePoint(x, y, r, ang1);
         const end = anglePoint(x, y, r, ang2);
         const a = gState.ctm.a,
@@ -935,7 +935,7 @@ function interpret(
         continue;
       }
       if (op === "scalefont") {
-        const size = safePopNumber(0);
+        const size = safePopNumber(stack, 0);
         const fontObj = stack.pop();
         if (fontObj && typeof fontObj === "object") {
           fontObj.size = size;
