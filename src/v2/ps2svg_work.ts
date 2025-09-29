@@ -445,7 +445,7 @@ function emitSVGPath(d: string, g: GraphicState, fillMode = false, addDash = fal
 
 function isRectanglePath(path: PathBuilder): boolean {
   const parts = path.parts;
-  if (parts.length < 5) return false;
+  if (parts.length < 5) return false; // M + 4L + Z
   if (!parts[0].startsWith("M ")) return false;
   if (!parts[parts.length - 1].endsWith("Z")) return false;
   const lines = parts.slice(1, -1);

@@ -923,13 +923,12 @@ function escapeXML(s: string) {
 // Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
 function isRectanglePath(path: PathBuilder): boolean {
   const parts = path.parts;
-  if (parts.length !== 6) return false; // M + 4L + Z
+  if (parts.length < 5) return false; // M + 4L + Z
   if (!parts[0].startsWith("M ")) return false;
-  if (!parts[5].startsWith("Z")) return false;
-  for (let i = 1; i <= 4; i++) {
-    if (!parts[i].startsWith("L ")) return false;
-  }
-  return true;
+  if (!parts[parts.length - 1].endsWith("Z")) return false;
+  const lines = parts.slice(1, -1);
+  if (lines.length !== 4) return false;
+  return lines.every((p) => p.startsWith("L "));
 }
 
 // Extrai coordenadas de retângulo e gera SVG <rect>
