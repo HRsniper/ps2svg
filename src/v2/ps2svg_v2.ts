@@ -508,6 +508,16 @@ function extractRectangle(
   }
 }
 
+function escapeXML(s: string) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
+}
+
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
@@ -967,16 +977,6 @@ function interpret(
 function anglePoint(cx: number, cy: number, r: number, deg: number) {
   const rad = (deg * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
-function escapeXML(s: string) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
 }
 
 function extractBoundingBox(ps: string) {
