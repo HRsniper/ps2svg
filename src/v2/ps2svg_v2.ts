@@ -234,13 +234,13 @@ function tokenize(ps: string): Token[] {
     stringRe.lastIndex = index;
     let match = stringRe.exec(ps);
     if (match) {
-      const raw = match[0].slice(1, -1).replace(/\\([()\\nrt])/g, (s, g) => {
-        if (g === "n") return "\n";
-        if (g === "r") return "\r";
-        if (g === "t") return "\t";
-        return g;
-      });
-      // const raw = unescapePostscriptString(match[0].slice(1, -1));
+      // const raw = match[0].slice(1, -1).replace(/\\([()\\nrt])/g, (s, g) => {
+      //   if (g === "n") return "\n";
+      //   if (g === "r") return "\r";
+      //   if (g === "t") return "\t";
+      //   return g;
+      // });
+      const raw = unescapePostscriptString(match[0].slice(1, -1));
       tokens.push({ type: "string", value: raw });
       index = stringRe.lastIndex;
       continue;
