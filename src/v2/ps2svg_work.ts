@@ -217,7 +217,6 @@ class PathBuilder {
     this.parts.push("Z");
   }
 
-  // Utilitários
   toPath(): string {
     return this.parts.join(" ");
   }
@@ -327,7 +326,6 @@ function tokenize(ps: string): Token[] {
   return tokens;
 }
 
-// PS string unescaping: Char-by-char loop for precise handling (per PLRM)
 function unescapePostscriptString(str: string): string {
   let result = "";
   let index = 0;
@@ -338,10 +336,10 @@ function unescapePostscriptString(str: string): string {
       index++;
       continue;
     }
-    // Escape sequence: \ followed by...
+
     index++; // Skip the \
     if (index >= str.length) {
-      result += "\\"; // Trailing \ -> literal \
+      result += "\\";
       break;
     }
     const nextChar = str[index];
@@ -372,7 +370,7 @@ function unescapePostscriptString(str: string): string {
         break;
       case " ":
         result += " ";
-        break; // Escaped space
+        break;
       default:
         // Octal: \ddd (1-3 digits 0-7)
         if (nextChar >= "0" && nextChar <= "7") {
@@ -388,9 +386,8 @@ function unescapePostscriptString(str: string): string {
           }
           const code = parseInt(octal, 8);
           result += String.fromCharCode(code > 255 ? 255 : code);
-          index--; // Adjust for loop increment
+          index--;
         } else {
-          // Literal next char (non-special, e.g., \n where n is literal 'n' after escaped \)
           result += nextChar;
         }
         break;
@@ -469,7 +466,7 @@ function isIdentityMatrix(m: Matrix): boolean {
 function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, addDash = false): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
-  // Use Matrix.decompose pra transform legível (SVG2 Sec. 6.2.3)
+  // Use Matrix.decompose pra transform legível
   const decomp = g.ctm.decompose();
   let transformStr = "";
   if (!isIdentityMatrix(g.ctm)) {
@@ -538,7 +535,6 @@ function safePopNumber(stack: any[], def = 0): number {
   return def;
 }
 
-// Helper for simple line flush
 function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
   // Verifica os próximos tokens para ver se é uma linha isolada
   for (let j = startIdx; j < Math.min(startIdx + 3, tokens.length); j++) {
@@ -571,9 +567,9 @@ function flushPath(
 ) {
   if (path.length() === 0) return;
   const d = path.toPath();
-  const pathStr = emitSVGPath(d, g, mode, true); // addDash=true pra lines
+  const pathStr = emitSVGPath(d, g, mode, true);
   svgOut.elementShapes.push(pathStr);
-  path = path.reset(); // Usa reset() pra reinit fresh
+  path = path.reset();
 }
 
 function interpret(
@@ -607,7 +603,6 @@ function interpret(
     } else if (tokenType === "operator") {
       const op = tokenValue;
 
-      // Verifica se é um procedimento definido pelo usuário
       const dictVal = lookupName(op);
       if (dictVal !== undefined) {
         if (dictVal && typeof dictVal === "object" && dictVal.type === "procedure") {
@@ -749,8 +744,6 @@ function interpret(
         path.lineToRel(dx, dy);
         currentX += dx;
         currentY += dy;
-        // if (Math.abs(dy) < 1e-6) path.horizontalLineToRel(dx); // h dx raw
-        // else if (Math.abs(dx) < 1e-6) path.verticalLineToRel(dy); // v dy raw
         continue;
       }
 
@@ -851,7 +844,6 @@ function interpret(
         const ty = safePopNumber(stack, 0);
         const tx = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.translate(tx, ty);
-        // Atualiza modo do path quando CTM muda
         const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
         path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
@@ -876,9 +868,8 @@ function interpret(
 
       if (op === "gsave") {
         gStack.push(cloneGraphic(gState));
-        // Se há transformação, use coordenadas locais
-        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
-        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
+        // const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        // path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -895,7 +886,6 @@ function interpret(
         }
 
         gState = st;
-        // Atualiza modo do path ao restaurar estado gráfico
         const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
         path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
@@ -908,26 +898,20 @@ function interpret(
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
 
-        const { a, b, c, d, e, f } = gState.ctm;
+        const { a, b, c, d } = gState.ctm;
 
-        // Se estamos em modo local (needGroup), use raio original
-        // Se não, aplique a escala da CTM
         const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
         let rx, ry;
         if (needGroup) {
-          // Coordenadas locais - raio não escalado
           rx = Math.abs(r);
           ry = Math.abs(r);
         } else {
-          // Coordenadas globais - aplica escala da CTM
           const scaleX = Math.hypot(a, b) || 1;
           const scaleY = Math.hypot(c, d) || 1;
           rx = Math.abs(r * scaleX);
           ry = Math.abs(r * scaleY);
         }
 
-        // Sempre use PathBuilder for arc/circle/elipse: <path M A ...> (no <circle>/<ellipse>)
-        // For full: two A segments (SVG2 Sec. 8.3.8 ex.)
         const startRad = ang1 * (Math.PI / 180);
         const start = { x: x + r * Math.cos(startRad), y: y + r * Math.sin(startRad) };
         const endRad = ang2 * (Math.PI / 180);
@@ -936,11 +920,9 @@ function interpret(
         const delta = Math.abs(ang2 - ang1);
         const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
 
-        path.moveTo(start.x, start.y); // Start point (PLRM arc starts at first angle)
+        path.moveTo(start.x, start.y);
 
         if (isFullCircle) {
-          // Full: two semi-arcs (large=1, sweep=1 for CW 360°)
-          // Assume start at ang1=0 (right), mid at 180° left
           const midRad = (ang1 + 180) % 360;
           const mid = { x: x + r * Math.cos((midRad * Math.PI) / 180), y: y + r * Math.sin((midRad * Math.PI) / 180) };
 
@@ -950,7 +932,6 @@ function interpret(
           currentX = end.x;
           currentY = end.y;
         } else {
-          // Arco parcial
           const normalizedDelta = (((ang2 - ang1) % 360) + 360) % 360;
           const largeArc = normalizedDelta > 180 ? 1 : 0;
           const sweep = normalizedDelta > 0 ? 1 : 0;
@@ -976,7 +957,6 @@ function interpret(
       }
 
       if (op === "image" || op === "imagemask") {
-        // KEEP: Imagem como <image> (separate tag)
         svgOut.elementShapes.push(
           `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="${DEFAULT_IMAGE}" />`
         );
@@ -1017,7 +997,6 @@ function interpret(
       }
 
       if (op === "show") {
-        // KEEP: Texto como <text> (separate tag)
         const s = String(stack.pop() ?? "");
         const escaped = escapeXML(s);
         if (gState.lastTextPos) {
@@ -1026,10 +1005,11 @@ function interpret(
             `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}">${escaped}</text>`
           );
         }
-        path = path.reset(); // Limpa path após show
-        gState.lastTextPos = null; // Após show, limpe
+        path = path.reset();
+        gState.lastTextPos = null;
         continue;
       }
+
       if (op === "showpage") {
         continue;
       }
