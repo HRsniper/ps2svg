@@ -727,11 +727,87 @@ function interpret(
         continue;
       }
 
+      if (op === "dup") {
+        const v = stack[stack.length - 1];
+        if (v !== undefined) stack.push(v);
+        continue;
+      }
+
+      if (op === "pop") {
+        stack.pop();
+        continue;
+      }
+
+      if (op === "index") {
+        const n = safePopNumber(stack, 0);
+        const idx = stack.length - 1 - n;
+        if (idx >= 0 && idx < stack.length) {
+          stack.push(stack[idx]);
+        }
+        continue;
+      }
+
+      if (op === "roll") {
+        const j = safePopNumber(stack, 0); // number of positions to roll
+        const n = safePopNumber(stack, 0); // number of elements
+        if (n > 0 && n <= stack.length) {
+          const elements = stack.splice(stack.length - n, n);
+          const effectiveJ = ((j % n) + n) % n;
+          const rolled = [...elements.slice(-effectiveJ), ...elements.slice(0, -effectiveJ)];
+          stack.push(...rolled);
+        }
+        continue;
+      }
+
+      if (op === "copy") {
+        const n = safePopNumber(stack, 0);
+        if (n > 0 && n <= stack.length) {
+          const toCopy = stack.slice(stack.length - n);
+          stack.push(...toCopy);
+        }
+        continue;
+      }
+
+      if (op === "clear") {
+        stack.length = 0;
+        continue;
+      }
+
+      if (op === "count") {
+        stack.push(stack.length);
+        continue;
+      }
+
       if (op === "exch") {
         const b = stack.pop();
         const a = stack.pop();
         stack.push(b);
         stack.push(a);
+        continue;
+      }
+
+      if (op === "array") {
+        const size = safePopNumber(stack, 0);
+        stack.push(new Array(size).fill(null));
+        continue;
+      }
+
+      if (op === "aload") {
+        const arr = stack.pop();
+        if (Array.isArray(arr)) {
+          stack.push(...arr);
+          stack.push(arr);
+        }
+        continue;
+      }
+
+      if (op === "astore") {
+        const arr = stack.pop();
+        if (Array.isArray(arr) && arr.length <= stack.length) {
+          const values = stack.splice(stack.length - arr.length, arr.length);
+          arr.splice(0, arr.length, ...values);
+          stack.push(arr);
+        }
         continue;
       }
 
