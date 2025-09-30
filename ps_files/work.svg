@@ -3,7 +3,7 @@
 
 <g transform="translate(0, 400) scale(1,-1)">
 <path d="M 50 50 L 150 150" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
-<path d="M 200 50 L 300 50 L 300 100 L 200 100 Z" fill="black" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 200 50 l 100 0 l 0 50 l -100 0 Z" fill="black" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 130 150 A 40 40 0 1 0 50 150 A 40 40 0 1 0 130 150 Z" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <g transform="matrix(30 0 0 10 300 200)"><path d="M 1 0 A 1 1 0 1 0 -1 0 A 1 1 0 1 0 1 0 Z" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/></g>
 <path d="M 50 250 L 100 300 L 150 250 Z" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
@@ -13,7 +13,7 @@
 <path d="M 370 300 A 20 20 0 1 0 330 300 A 20 20 0 1 0 370 300 Z" fill="none" stroke="rgb(128, 128, 128)" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 320 350 A 20 20 0 1 0 280 350 A 20 20 0 1 0 320 350 Z" fill="none" stroke="rgb(255, 128, 128)" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
-<g transform="matrix(1.414 1.414 -0.707 0.707 100 100)"><path d="M 30 0 A 30 30 0 1 0 -30 0 A 30 30 0 1 0 30 0 Z" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/></g>
+<g transform="matrix(1.414 1.414 -0.707 0.707 100 100)"><path d="M 30 0 A 30 30 0 1 0 -30 0 A 30 30 0 1 0 30 0 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/></g>
 <!-- image/imagemask not implemented -->
 <image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkltYWdlbTwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMjk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPk5vdDwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMzk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkZvdW5kPC90ZXh0Pgo8L3N2Zz4K" />
 <!-- shfill not fully implemented -->
@@ -22,7 +22,7 @@
 <!-- Unhandled operator: setpattern -->
 <path d="M 300 200 A 50 50 0 1 0 200 200 A 50 50 0 1 0 300 200 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 250 200 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
-<path d="M 59.784 66.176 L 59.784 82.264 L 136.309 82.264 L 136.309 66.176 L 59.784 66.176 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 59.784 66.176 l 0 16.088 l 76.525 0 l 0 -16.088 l -76.525 0 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 </g>
 
 </svg>

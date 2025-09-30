@@ -580,7 +580,7 @@ function flushPath(
   const d = path.toPath();
   const pathStr = emitSVGPath(d, g, mode);
   svgOut.elementShapes.push(pathStr);
-  path.clear();
+  path = path.reset();
 }
 
 function handleArc(
@@ -749,7 +749,7 @@ function interpret(
       if (op === "setdash") {
         const phase = safePopNumber(stack, 0);
         const arr = stack.pop();
-        if (Array.isArray(arr)) gState.dash = arr.map(Number).join(",");
+        if (Array.isArray(arr)) gState.dash = arr.map(Number).join(" ");
         else if (typeof arr === "number") gState.dash = `${arr}`;
         else gState.dash = null;
         continue;
@@ -763,10 +763,10 @@ function interpret(
       if (op === "moveto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
-        currentX = x;
-        currentY = y;
         const pos = gState.ctm.applyPoint(x, y);
         path.moveTo(pos.x, pos.y);
+        currentX = x;
+        currentY = y;
         gState.lastTextPos = { x, y };
         continue;
       }
@@ -774,11 +774,10 @@ function interpret(
       if (op === "rmoveto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
+        const pos = gState.ctm.applyPoint(dx, dy);
+        path.moveToRel(pos.x, pos.y);
         currentX += dx;
         currentY += dy;
-        const pos = gState.ctm.applyPoint(currentX, currentY);
-        path.moveTo(pos.x, pos.y);
-        // path.moveToRel(pos.x, pos.y);
         gState.lastTextPos = { x: currentX, y: currentY };
         continue;
       }
@@ -786,19 +785,19 @@ function interpret(
       if (op === "lineto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
-        currentX = x;
-        currentY = y;
         const pos = gState.ctm.applyPoint(x, y);
         path.lineTo(pos.x, pos.y);
+        currentX = x;
+        currentY = y;
 
         // Verifica se é uma linha simples (moveto + lineto seguido de moveto ou texto)
-        if (
-          path.parts.length === 2 &&
-          path.parts[0].startsWith("M ") &&
-          path.parts[1].startsWith("L ") &&
-          isSimpleLineAhead(tokens, i + 1)
-        ) {
-          // if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
+        // if (
+        //   path.parts.length === 2 &&
+        //   path.parts[0].startsWith("M ") &&
+        //   path.parts[1].startsWith("L ") &&
+        //   isSimpleLineAhead(tokens, i + 1)
+        // ) {
+        if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
           flushPath(path, gState, svgOut, StrokeOnly);
           path = path.reset(); // Reset imediato para próximo moveto
         }
@@ -808,50 +807,48 @@ function interpret(
       if (op === "rlineto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
+        const pos = gState.ctm.applyPoint(dx, dy);
+        path.lineToRel(pos.x, pos.y);
         currentX += dx;
         currentY += dy;
-        const pos = gState.ctm.applyPoint(currentX, currentY);
-        path.lineTo(pos.x, pos.y);
-        // path.lineToRel(pos.x, pos.y);
         continue;
       }
 
       if (op === "curveto") {
-        const y = safePopNumber(stack, 0),
-          x = safePopNumber(stack, 0);
-        const y2 = safePopNumber(stack, 0),
-          x2 = safePopNumber(stack, 0);
-        const y1 = safePopNumber(stack, 0),
-          x1 = safePopNumber(stack, 0);
-        currentX = x;
-        currentY = y;
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
+        const y2 = safePopNumber(stack, 0);
+        const x2 = safePopNumber(stack, 0);
+        const y1 = safePopNumber(stack, 0);
+        const x1 = safePopNumber(stack, 0);
         const pos1 = gState.ctm.applyPoint(x1, y1);
         const pos2 = gState.ctm.applyPoint(x2, y2);
         const pos3 = gState.ctm.applyPoint(x, y);
         path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        currentX = x;
+        currentY = y;
         continue;
       }
 
       if (op === "rcurveto") {
-        const dy = safePopNumber(stack, 0),
-          dx = safePopNumber(stack, 0);
-        const dy2 = safePopNumber(stack, 0),
-          dx2 = safePopNumber(stack, 0);
-        const dy1 = safePopNumber(stack, 0),
-          dx1 = safePopNumber(stack, 0);
-        const x1 = currentX + dx1,
-          y1 = currentY + dy1;
-        const x2 = currentX + dx2,
-          y2 = currentY + dy2;
-        currentX += dx;
-        currentY += dy;
-        const x = currentX,
-          y = currentY;
+        const dy = safePopNumber(stack, 0);
+        const dx = safePopNumber(stack, 0);
+        const dy2 = safePopNumber(stack, 0);
+        const dx2 = safePopNumber(stack, 0);
+        const dy1 = safePopNumber(stack, 0);
+        const dx1 = safePopNumber(stack, 0);
+        const x1 = currentX + dx1;
+        const y1 = currentY + dy1;
+        const x2 = currentX + dx2;
+        const y2 = currentY + dy2;
+        const x = currentX;
+        const y = currentY;
         const pos1 = gState.ctm.applyPoint(x1, y1);
         const pos2 = gState.ctm.applyPoint(x2, y2);
         const pos3 = gState.ctm.applyPoint(x, y);
-        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
-        // path.curveToRel(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        path.curveToRel(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        currentX += dx;
+        currentY += dy;
         continue;
       }
 
@@ -872,7 +869,7 @@ function interpret(
           const rect = extractRectangle(path, gState);
           if (rect) {
             svgOut.elementShapes.push(rect.rect);
-            path.parts = [];
+            path = path.reset();
             continue;
           }
         }
@@ -983,7 +980,7 @@ function interpret(
           const clipId = `clip${clipIdCounter++}`;
           svgOut.defs.push(`<clipPath id="${clipId}"><path d="${clipPath}" /></clipPath>`);
           gState.clipStack.push(clipPath);
-          path.clear();
+          path = path.reset();
         }
         continue;
       }
@@ -1038,6 +1035,7 @@ function interpret(
           );
         }
         path = path.reset(); // Limpa path após show
+        gState.lastTextPos = null;
         continue;
       }
       if (op === "showpage") {
@@ -1062,7 +1060,7 @@ function interpret(
             if (path.length() > 0) {
               const d = path.toPath();
               svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" />`);
-              path.clear();
+              path = path.reset();
             }
           }
         } else {
@@ -1091,7 +1089,7 @@ function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elemen
   const allParts = path.parts;
   if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
     let subPath = new PathBuilder();
-    subPath.reset();
+    subPath = subPath.reset();
     for (const part of allParts) {
       if (part.startsWith("M ")) {
         if (subPath.length() > 0) {
@@ -1114,7 +1112,7 @@ function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elemen
     const d = path.toPath();
     svgOut.elementShapes.push(emitSVGPath(d, gState, StrokeOnly));
   }
-  path.clear();
+  path = path.reset();
 }
 
 function extractBoundingBox(ps: string) {
