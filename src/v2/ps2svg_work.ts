@@ -104,70 +104,112 @@ class Matrix {
 
 class PathBuilder {
   parts: string[] = [];
+  private useLocalCoords = false;
+  private ctm: Matrix | undefined = undefined;
+
+  setTransformMode(useLocal: boolean, transform?: Matrix) {
+    this.useLocalCoords = useLocal;
+    this.ctm = transform;
+  }
+
+  private transformPoint(x: number, y: number): { x: number; y: number } {
+    if (!this.useLocalCoords && this.ctm) {
+      return this.ctm.applyPoint(x, y);
+    }
+    return { x, y };
+  }
+
   moveTo(x: number, y: number) {
-    this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`M ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   moveToRel(dx: number, dy: number) {
-    this.parts.push(`m ${numFmt(dx)} ${numFmt(dy)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`m ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   lineTo(x: number, y: number) {
-    this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`L ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   lineToRel(dx: number, dy: number) {
-    this.parts.push(`l ${numFmt(dx)} ${numFmt(dy)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`l ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   horizontalLineTo(x: number) {
-    this.parts.push(`H ${numFmt(x)}`);
+    const p = this.transformPoint(x, 0);
+    this.parts.push(`H ${numFmt(p.x)}`);
   }
   horizontalLineToRel(dx: number) {
-    this.parts.push(`h ${numFmt(dx)}`);
+    const p = this.transformPoint(dx, 0);
+    this.parts.push(`h ${numFmt(p.x)}`);
   }
 
   verticalLineTo(y: number) {
-    this.parts.push(`V ${numFmt(y)}`);
+    const p = this.transformPoint(0, y);
+    this.parts.push(`V ${numFmt(p.y)}`);
   }
   verticalLineToRel(dy: number) {
-    this.parts.push(`v ${numFmt(dy)}`);
+    const p = this.transformPoint(0, dy);
+    this.parts.push(`v ${numFmt(p.y)}`);
   }
 
   curveTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
-    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
+    const p1 = this.transformPoint(x1, y1);
+    const p2 = this.transformPoint(x2, y2);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`C ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   curveToRel(dx1: number, dy1: number, dx2: number, dy2: number, dx: number, dy: number) {
-    this.parts.push(`c ${numFmt(dx1)} ${numFmt(dy1)} ${numFmt(dx2)} ${numFmt(dy2)} ${numFmt(dx)} ${numFmt(dy)}`);
+    const p1 = this.transformPoint(dx1, dy1);
+    const p2 = this.transformPoint(dx2, dy2);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`c ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   smoothCurveTo(x2: number, y2: number, x: number, y: number) {
-    this.parts.push(`S ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
+    const p2 = this.transformPoint(x2, y2);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`S ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   smoothCurveToRel(dx2: number, dy2: number, dx: number, dy: number) {
-    this.parts.push(`s ${numFmt(dx2)} ${numFmt(dy2)} ${numFmt(dx)} ${numFmt(dy)}`);
+    const p2 = this.transformPoint(dx2, dy2);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`s ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   quadraticCurveTo(x1: number, y1: number, x: number, y: number) {
-    this.parts.push(`Q ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x)} ${numFmt(y)}`);
+    const p1 = this.transformPoint(x1, y1);
+    const p2 = this.transformPoint(x, y);
+    this.parts.push(`Q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)}`);
   }
   quadraticCurveToRel(dx1: number, dy1: number, dx: number, dy: number) {
-    this.parts.push(`q ${numFmt(dx1)} ${numFmt(dy1)} ${numFmt(dx)} ${numFmt(dy)}`);
+    const p1 = this.transformPoint(dx1, dy1);
+    const p2 = this.transformPoint(dx, dy);
+    this.parts.push(`q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)}`);
   }
 
   smoothQuadraticCurveTo(x: number, y: number) {
-    this.parts.push(`T ${numFmt(x)} ${numFmt(y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`T ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   smoothQuadraticCurveToRel(dx: number, dy: number) {
-    this.parts.push(`t ${numFmt(dx)} ${numFmt(dy)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`t ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   ellipseTo(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, x: number, y: number) {
+    // Para arcos, rx/ry/rotation não são transformados como pontos
+    const p = this.transformPoint(x, y);
     this.parts.push(
-      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
+      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(p.x)} ${numFmt(p.y)}`
     );
   }
   ellipseToRel(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, dx: number, dy: number) {
+    const p = this.transformPoint(dx, dy);
     this.parts.push(
-      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
+      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(p.x)} ${numFmt(p.y)}`
     );
   }
 
@@ -185,8 +227,12 @@ class PathBuilder {
   clear() {
     this.parts = [];
   }
+
   reset(): PathBuilder {
-    return new PathBuilder();
+    const newPath = new PathBuilder();
+    // Propaga o modo de transformação
+    newPath.setTransformMode(this.useLocalCoords, this.ctm);
+    return newPath;
   }
 }
 
