@@ -3,7 +3,7 @@
 
 <g transform="translate(0, 400) scale(1,-1)">
 <path d="M 50 50 L 150 150" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
-<path d="M 200 50 L 300 50 L 300 100 L 200 100 Z" fill="black" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 200 50 l 100 0 l 0 50 l -100 0 Z" fill="black" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <circle cx="90" cy="150" r="40" fill="black" stroke="black" stroke-width="1"/>
 <path d="M 330 200 A 30 10 0 0 1 270 200" fill="none" stroke="black" stroke-width="1"/>
 <path d="M 270 200 A 30 10 0 0 1 330 200" fill="none" stroke="black" stroke-width="1"/>
@@ -24,7 +24,7 @@
 <!-- Unhandled operator: setpattern -->
 <circle cx="250" cy="200" r="50" fill="rgb(242, 212, 209)" stroke="rgb(242, 212, 209)" stroke-width="5"/>
 <path d="M 250 200 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
-<path d="M 59.784 66.176 L 59.784 82.264 L 136.309 82.264 L 136.309 66.176 L 59.784 66.176 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 59.784 66.176 l 0 16.088 l 76.525 0 l 0 -16.088 l -76.525 0 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
 </g>
 
 </svg>
