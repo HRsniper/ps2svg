@@ -197,8 +197,8 @@ interface GraphicState {
   fill: string | null;
   stroke: string | null;
   strokeWidth?: number;
-  lineCap?: "butt" | "round" | "square" | null;
-  lineJoin?: "miter" | "round" | "bevel" | "arcs" | null;
+  lineCap?: string | null;
+  lineJoin?: string | null;
   font: string;
   fontSize: number;
   clipStack: string[];
@@ -211,6 +211,13 @@ type PostscriptValue = any;
 interface PostscriptDict {
   [key: string]: PostscriptValue;
 }
+
+const FillOnly = { stroke: false, fill: true };
+const StrokeOnly = { stroke: true, fill: false };
+const FillAndStroke = { stroke: true, fill: true };
+
+const DEFAULT_IMAGE =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkltYWdlbTwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMjk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPk5vdDwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMzk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkZvdW5kPC90ZXh0Pgo8L3N2Zz4K";
 
 function tokenize(ps: string): Token[] {
   ps = ps.replace(/%[^\n\r]*/g, " "); // Remove comments
@@ -233,6 +240,12 @@ function tokenize(ps: string): Token[] {
     stringRe.lastIndex = index;
     let match = stringRe.exec(ps);
     if (match) {
+      // const raw = match[0].slice(1, -1).replace(/\\([()\\nrt])/g, (s, g) => {
+      //   if (g === "n") return "\n";
+      //   if (g === "r") return "\r";
+      //   if (g === "t") return "\t";
+      //   return g;
+      // });
       const raw = unescapePostscriptString(match[0].slice(1, -1));
       tokens.push({ type: "string", value: raw });
       index = stringRe.lastIndex;
@@ -413,16 +426,18 @@ function isIdentityMatrix(m: Matrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-function emitSVGPath(d: string, g: GraphicState, fillMode = false, addDash = false, isClip = false): string {
+function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, addDash = false): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
-  const strokeColor = g.stroke ?? "black";
-  const fillColor = fillMode ? (g.fill ?? "black") : "none";
-  const strokeAttr = fillMode ? "none" : strokeColor;
+  const fillColor = mode.fill ? (g.fill ?? "black") : "none";
+  const strokeColor = mode.stroke ? (g.stroke ?? "black") : "none";
+  const strokeAttr = mode.stroke ? strokeColor : "none";
+
   const strokeWidthAttr = g.strokeWidth ? `stroke-width="${g.strokeWidth}"` : "";
   const strokeLineCapAttr = g.lineCap ? `stroke-linecap="${g.lineCap}"` : "";
   const strokeLineJoinAttr = g.lineJoin ? `stroke-linejoin="${g.lineJoin}"` : "";
   const dashAttr = addDash && g.dash ? `stroke-dasharray="${g.dash}"` : "";
+
   const pathAttrs = [
     `d="${d}"`,
     `fill="${fillColor}"`,
@@ -446,6 +461,7 @@ function emitSVGPath(d: string, g: GraphicState, fillMode = false, addDash = fal
   }
 }
 
+// Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
 function isRectanglePath(path: PathBuilder): boolean {
   const parts = path.parts;
   if (parts.length < 5) return false; // M + 4L + Z
@@ -510,7 +526,13 @@ function escapeXML(s: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;"); // Keep for safety in attributes
+    .replace(/'/g, "&#39;");
+  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
+}
+
+function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
+  const rad = (deg * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
 function safePopNumber(stack: any[], def = 0): number {
@@ -523,14 +545,9 @@ function safePopNumber(stack: any[], def = 0): number {
   return def;
 }
 
-function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
-  const rad = (deg * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
 // Helper for simple line flush
 function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
-  // Conservador: Assume simple se próximo não é outro path op (flush safe)
+  // Verifica os próximos tokens para ver se é uma linha isolada
   for (let j = startIdx; j < Math.min(startIdx + 3, tokens.length); j++) {
     const token = tokens[j];
     if (token.type === "operator") {
@@ -547,11 +564,98 @@ function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
   return true; // Near EOF: flush
 }
 
+// Função para executar um procedimento (insere tokens no fluxo atual)
+function executeProcedure(tokens: Token[], procTokens: Token[], currentIndex: number) {
+  // Insere os tokens do procedimento na posição atual
+  tokens.splice(currentIndex + 1, 0, ...procTokens);
+}
+
+function flushPath(
+  path: PathBuilder,
+  g: GraphicState,
+  svgOut: { elementShapes: string[] },
+  mode: { stroke: boolean; fill: boolean }
+) {
+  if (path.length() === 0) return;
+  const d = path.toPath();
+  const pathStr = emitSVGPath(d, g, mode);
+  svgOut.elementShapes.push(pathStr);
+  path.clear();
+}
+
+function handleArc(
+  stack: (number | string | any)[],
+  gState: GraphicState,
+  svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] }
+) {
+  const ang2 = safePopNumber(stack, 0);
+  const ang1 = safePopNumber(stack, 0);
+  const r = safePopNumber(stack, 0);
+  const y = safePopNumber(stack, 0);
+  const x = safePopNumber(stack, 0);
+
+  const start = anglePoint(x, y, r, ang1);
+  const end = anglePoint(x, y, r, ang2);
+
+  const { a, b, c, d, e, f } = gState.ctm;
+
+  const scaleX = Math.hypot(a, b) || 1;
+  const scaleY = Math.hypot(c, d) || 1;
+
+  const rx = Math.abs(r * scaleX);
+  const ry = Math.abs(r * scaleY);
+
+  const pStart = gState.ctm.applyPoint(start.x, start.y);
+  const pEnd = gState.ctm.applyPoint(end.x, end.y);
+
+  const delta = (((ang2 - ang1) % 360) + 360) % 360;
+
+  const isFullCircle = Math.abs(delta) < 1e-6;
+  const isUniformTransform = Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6;
+  const isArcClosed = Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6;
+
+  if (isFullCircle) {
+    const cP = gState.ctm.applyPoint(x, y);
+    const avgR = (rx + ry) / 2;
+    if (isUniformTransform) {
+      svgOut.elementShapes.push(
+        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
+      );
+    } else {
+      const midAng = ang1 + 180;
+      const mid = anglePoint(x, y, r, midAng);
+      const pMid = gState.ctm.applyPoint(mid.x, mid.y);
+
+      const d1 = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pMid.y)}`;
+      const d2 = `M ${numFmt(pMid.x)} ${numFmt(pMid.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+      svgOut.elementShapes.push(
+        `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
+      );
+      svgOut.elementShapes.push(
+        `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
+      );
+      // const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pEnd.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pStart.x)} ${numFmt(pStart.y)}`;
+      // svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
+    }
+  } else {
+    const largeArc = delta > 180 ? 1 : 0;
+    const sweep = delta > 0 ? 1 : 0;
+
+    if (!isArcClosed) {
+      const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+      const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
+      // svgOut.elementShapes.push(
+      //   `<path d="${dd}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
+      // );
+      svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
+    }
+  }
+}
+
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
-  boundingBox?: { llx: number; lly: number; urx: number; ury: number },
-  debug = false
+  boundingBox?: { llx: number; lly: number; urx: number; ury: number }
 ) {
   const stack: (number | string | any)[] = [];
   const gStack: GraphicState[] = [];
@@ -561,444 +665,25 @@ function interpret(
   let currentY = 0;
   let clipIdCounter = 0;
 
-  const operatorHandlers: Record<string, () => void> = {
-    neg: () => {
-      const v = stack.pop();
-      if (typeof v === "number") stack.push(-v);
-      else if (typeof v === "string" && !isNaN(Number(v))) stack.push(-Number(v));
-    },
-
-    add: () => {
-      const b = safePopNumber(stack);
-      const a = safePopNumber(stack);
-      stack.push(a + b);
-    },
-
-    sub: () => {
-      const b = safePopNumber(stack);
-      const a = safePopNumber(stack);
-      stack.push(a - b);
-    },
-
-    mul: () => {
-      const b = safePopNumber(stack, 1);
-      const a = safePopNumber(stack, 1);
-      stack.push(a * b);
-    },
-
-    div: () => {
-      const b = safePopNumber(stack, 1);
-      const a = safePopNumber(stack);
-      stack.push(b === 0 ? 0 : a / b);
-    },
-
-    exch: () => {
-      const b = stack.pop();
-      const a = stack.pop();
-      stack.push(b, a);
-    },
-
-    dict: () => {
-      const size = safePopNumber(stack);
-      stack.push({});
-    },
-
-    begin: () => {
-      const d = stack.pop();
-      dictStack.push(d && typeof d === "object" ? d : {});
-    },
-
-    end: () => {
-      if (dictStack.length > 1) dictStack.pop();
-    },
-
-    def: () => {
-      const value = stack.pop();
-      const key = stack.pop();
-      if (typeof key === "string") dictStack[dictStack.length - 1][key] = value;
-    },
-
-    setdash: () => {
-      const phase = safePopNumber(stack);
-      const arr = stack.pop();
-      if (Array.isArray(arr)) gState.dash = arr.map(Number).join(",");
-      else if (typeof arr === "number") gState.dash = `${arr}`;
-      else gState.dash = null;
-    },
-
-    newpath: () => {
-      path.clear();
-    },
-
-    moveto: () => {
-      const y = safePopNumber(stack);
-      const x = safePopNumber(stack);
-      currentX = x;
-      currentY = y;
-      const pos = gState.ctm.applyPoint(x, y);
-      path.moveTo(pos.x, pos.y);
-      gState.lastTextPos = { x, y };
-    },
-
-    rmoveto: () => {
-      const dy = safePopNumber(stack);
-      const dx = safePopNumber(stack);
-      currentX += dx;
-      currentY += dy;
-      const pos = gState.ctm.applyPoint(currentX, currentY);
-      path.moveTo(pos.x, pos.y);
-      gState.lastTextPos = { x: currentX, y: currentY };
-    },
-
-    lineto: () => {
-      const y = safePopNumber(stack);
-      const x = safePopNumber(stack);
-      currentX = x;
-      currentY = y;
-      const pos = gState.ctm.applyPoint(x, y);
-      path.lineTo(pos.x, pos.y);
-      // Flush logic moved to main loop
-    },
-
-    rlineto: () => {
-      const dy = safePopNumber(stack);
-      const dx = safePopNumber(stack);
-      currentX += dx;
-      currentY += dy;
-      const pos = gState.ctm.applyPoint(currentX, currentY);
-      path.lineTo(pos.x, pos.y);
-    },
-
-    curveto: () => {
-      const y = safePopNumber(stack),
-        x = safePopNumber(stack);
-      const y2 = safePopNumber(stack),
-        x2 = safePopNumber(stack);
-      const y1 = safePopNumber(stack),
-        x1 = safePopNumber(stack);
-      currentX = x;
-      currentY = y;
-      const pos1 = gState.ctm.applyPoint(x1, y1);
-      const pos2 = gState.ctm.applyPoint(x2, y2);
-      const pos3 = gState.ctm.applyPoint(x, y);
-      path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
-    },
-
-    rcurveto: () => {
-      const dy = safePopNumber(stack),
-        dx = safePopNumber(stack);
-      const dy2 = safePopNumber(stack),
-        dx2 = safePopNumber(stack);
-      const dy1 = safePopNumber(stack),
-        dx1 = safePopNumber(stack);
-      const x1 = currentX + dx1,
-        y1 = currentY + dy1;
-      const x2 = currentX + dx2,
-        y2 = currentY + dy2;
-      currentX += dx;
-      currentY += dy;
-      const x = currentX,
-        y = currentY;
-      const pos1 = gState.ctm.applyPoint(x1, y1);
-      const pos2 = gState.ctm.applyPoint(x2, y2);
-      const pos3 = gState.ctm.applyPoint(x, y);
-      path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
-    },
-
-    closepath: () => {
-      path.close();
-    },
-
-    stroke: () => {
-      flushPathAsStroke(path, gState, svgOut);
-      path.clear();
-    },
-
-    fill: () => handleFill("nonzero"),
-    eofill: () => handleFill("evenodd"),
-    evenodd: () => {},
-
-    setrgbcolor: () => {
-      const b = safePopNumber(stack),
-        g = safePopNumber(stack),
-        r = safePopNumber(stack);
-      const rgb = color2rgb([r, g, b]).toString();
-      gState.fill = rgb;
-      gState.stroke = rgb;
-    },
-
-    setgray: () => {
-      const v = safePopNumber(stack);
-      const rgb = gray2rgb(v).toString();
-      gState.fill = rgb;
-      gState.stroke = rgb;
-    },
-
-    setcmykcolor: () => {
-      const k = safePopNumber(stack),
-        y = safePopNumber(stack),
-        m = safePopNumber(stack),
-        c = safePopNumber(stack);
-      const rgb = cmyk2rgb([c, m, y, k]).toString();
-      gState.fill = rgb;
-      gState.stroke = rgb;
-    },
-
-    setlinewidth: () => {
-      gState.strokeWidth = safePopNumber(stack, 1);
-    },
-
-    setlinecap: () => {
-      const v = stack.pop();
-      if (typeof v === "number") gState.lineCap = v === 0 ? "butt" : v === 1 ? "round" : "square"; // fallback
-    },
-
-    setlinejoin: () => {
-      const v = stack.pop();
-      if (typeof v === "number")
-        gState.lineJoin = v === 0 ? "miter" : v === 1 ? "round" : v === 2 ? "bevel" : v === 3 ? "arcs" : "miter"; // fallback
-    },
-
-    translate: () => {
-      const ty = safePopNumber(stack),
-        tx = safePopNumber(stack);
-      gState.ctm = gState.ctm.translate(tx, ty);
-    },
-
-    scale: () => {
-      const sy = safePopNumber(stack, 1),
-        sx = safePopNumber(stack, 1);
-      gState.ctm = gState.ctm.scale(sx, sy);
-    },
-
-    rotate: () => {
-      const angle = safePopNumber(stack);
-      gState.ctm = gState.ctm.rotate(angle);
-    },
-
-    gsave: () => {
-      gStack.push(cloneGraphic(gState));
-    },
-
-    grestore: () => {
-      if (gStack.length === 0) return;
-      const st = gStack.pop();
-      if (!st) return;
-
-      if (st.clipStack.length > gState.clipStack.length) {
-        for (let j = gState.clipStack.length; j < st.clipStack.length; j++) {
-          const clipPath = st.clipStack[j];
-          if (clipPath) {
-            svgOut.defs.push(`<clipPath id="clip${clipIdCounter++}"><path d="${clipPath}" /></clipPath>`);
-          }
-        }
-      }
-
-      gState = st;
-    },
-
-    arc: () => handleArc(),
-
-    clip: () => {
-      if (path.length() > 0) {
-        const clipPath = path.toPath();
-        const clipId = `clip${clipIdCounter++}`;
-        svgOut.defs.push(`<clipPath id="${clipId}"><path d="${clipPath}" /></clipPath>`);
-        gState.clipStack.push(clipPath);
-        path.clear();
-      }
-    },
-
-    image: () => handleImage(true),
-    imagemask: () => handleImage(false),
-    findfont: () => {
-      const fname = stack.pop();
-      stack.push({ font: typeof fname === "string" ? fname : String(fname) });
-    },
-
-    scalefont: () => {
-      const size = safePopNumber(stack);
-      const fontObj = stack.pop();
-      if (fontObj && typeof fontObj === "object") {
-        (fontObj as any).size = size;
-        stack.push(fontObj);
-      } else {
-        stack.push({ font: String(fontObj), size });
-      }
-    },
-
-    setfont: () => {
-      const f = stack.pop();
-      if (f && typeof f === "object") {
-        gState.font = (f as any).font ?? gState.font;
-        gState.fontSize = (f as any).size ?? gState.fontSize;
-      } else if (typeof f === "string") {
-        gState.font = f;
-      }
-    },
-
-    show: () => {
-      const s = String(stack.pop() ?? "");
-      const escaped = escapeXML(s);
-      if (gState.lastTextPos) {
-        const p = gState.ctm.applyPoint(gState.lastTextPos.x, gState.lastTextPos.y);
-        svgOut.elementTexts.push(
-          `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
-        );
-      }
-      path.clear();
-    },
-    showpage: () => {},
-    shfill: () => {
-      const shading = stack.pop();
-      if (shading && typeof shading === "object" && (shading as any).ShadingType === 2) {
-        const coords = (shading as any).Coords || [0, 0, 400, 0];
-        const c0 = color2rgb((shading as any).Function?.C0 || [1, 0, 0]).toString();
-        const c1 = color2rgb((shading as any).Function?.C1 || [0, 0, 1]).toString();
-        const gradId = `grad${clipIdCounter++}`;
-        svgOut.defs.push(
-          `<linearGradient id="${gradId}" x1="${numFmt(coords[0])}" y1="${numFmt(coords[1])}" x2="${numFmt(coords[2])}" y2="${numFmt(coords[3])}">
-            <stop offset="0" stop-color="${c0}" />
-            <stop offset="1" stop-color="${c1}" />
-          </linearGradient>`
-        );
-        if (path.length() > 0) {
-          const d = path.toPath();
-          svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" />`);
-          path.clear();
-        }
-      } else {
-        svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
-      }
-    },
-    setcolorspace: () => {
-      stack.pop(); // Ignore
-    }
-  };
-
-  function flushPathAsStroke(pb: PathBuilder, gs: GraphicState, out: { elementShapes: string[] }) {
-    if (pb.length() === 0) return;
-    const optRect = extractRectangle(pb, gs);
-    if (optRect) {
-      // Special handling for highlight
-      const { rect, minX, minY, width, height } = optRect;
-      const isHighlight =
-        gs.fill === "rgb(242, 212, 209)" && Math.abs(width - 76.525) < 1e-3 && Math.abs(height - 16.088) < 1e-3;
-      let rectStr = rect;
-      if (isHighlight) {
-        const flippedY = -minY;
-        rectStr = `<g id="highlight" transform="translate(0 ${numFmt(height)}) scale(1 -1)"><rect x="${numFmt(minX)}" y="${numFmt(flippedY)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${gs.fill}" /></g>`;
-      }
-      out.elementShapes.push(rectStr);
-      pb.clear();
-      return;
-    }
-    const d = pb.toPath();
-    out.elementShapes.push(emitSVGPath(d, gs, false));
-    pb.clear();
-  }
-
-  function handleFill(rule: "nonzero" | "evenodd") {
-    const optRect = extractRectangle(path, gState);
-    if (optRect) {
-      const { rect, minX, minY, width, height } = optRect;
-      // Special handling for highlight in fill
-      const isHighlight =
-        gState.fill === "rgb(242, 212, 209)" && Math.abs(width - 76.525) < 1e-3 && Math.abs(height - 16.088) < 1e-3;
-      let rectStr = rect;
-      if (isHighlight) {
-        const flippedY = -minY;
-        rectStr = `<g id="highlight" transform="translate(0 ${numFmt(height)}) scale(1 -1)"><rect x="${numFmt(minX)}" y="${numFmt(flippedY)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${gState.fill}" /></g>`;
-      } else {
-        // No fill-rule for rect (default nonzero as in expected)
-        rectStr = rect.replace(/fill-rule="[^"]*" /, "");
-      }
-      svgOut.elementShapes.push(rectStr);
-      path.clear();
-      return;
-    }
-    const d = path.toPath();
-    let pathStr = emitSVGPath(d, gState, true);
-    pathStr = pathStr.replace(
-      `fill="${gState.fill ?? "black"}"`,
-      `fill-rule="${rule}" fill="${gState.fill ?? "black"}"`
-    );
-    svgOut.elementShapes.push(pathStr);
-    path.clear();
-  }
-
-  function handleArc() {
-    const ang2 = safePopNumber(stack),
-      ang1 = safePopNumber(stack),
-      r = safePopNumber(stack);
-    const y = safePopNumber(stack),
-      x = safePopNumber(stack);
-
-    const start = anglePoint(x, y, r, ang1);
-    const end = anglePoint(x, y, r, ang2);
-
-    const { a, b, c, d, e, f } = gState.ctm;
-
-    const scaleX = Math.hypot(a, b) || 1;
-    const scaleY = Math.hypot(c, d) || 1;
-
-    const rx = Math.abs(r * scaleX),
-      ry = Math.abs(r * scaleY);
-
-    const pStart = gState.ctm.applyPoint(start.x, start.y);
-    const pEnd = gState.ctm.applyPoint(end.x, end.y);
-
-    const delta = (((ang2 - ang1) % 360) + 360) % 360;
-    const largeArc = delta > 180 ? 1 : 0;
-    const sweep = ang2 - ang1 > 0 ? 1 : 0;
-
-    const isArcClosed = Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6;
-
-    if (isArcClosed) {
-      const cP = gState.ctm.applyPoint(x, y);
-      const avgR = (rx + ry) / 2;
-      svgOut.elementShapes.push(
-        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"${gState.dash ? ` stroke-dasharray="${gState.dash}"` : ""}/>`
-      );
-    } else {
-      const d = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-      svgOut.elementShapes.push(emitSVGPath(d, gState, false, true));
-    }
-  }
-
-  function handleImage(isImage: boolean) {
-    const data = stack.pop();
-    svgOut.elementShapes.push(
-      `<!-- ${isImage ? "image" : "imagemask"} placeholder -->
-      ${isImage ? `<image x="0" y="0" width="50" height="50" href="data:image/png;base64,placeholder" />` : `<rect x="0" y="0" width="50" height="50" fill="black" mask="url(#mask1)" />`}`
-    );
-    if (!isImage) svgOut.defs.push('<mask id="mask1"><rect width="100%" height="100%" fill="white" /></mask>');
-  }
-
-  function executeProcedure(procTokens: Token[], currentIndex: number) {
-    tokens.splice(currentIndex + 1, 0, ...procTokens);
-  }
-
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     const tokenType = token.type;
     const tokenValue = token.value;
 
     if (tokenType === "number") stack.push(Number(tokenValue));
-    else if (tokenType === "string") stack.push(tokenValue);
-    else if (tokenType === "name") stack.push(tokenValue);
+    else if (tokenType === "string" || tokenType === "name") stack.push(tokenValue);
     else if (tokenType === "brace" && tokenValue === "{") {
       const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
       stack.push({ type: "procedure", body: procedure });
       i = nextIndex - 1;
-      continue;
     } else if (tokenType === "operator") {
       const op = tokenValue;
 
+      // Verifica se é um procedimento definido pelo usuário
       const dictVal = lookupName(op);
       if (dictVal !== undefined) {
         if (dictVal && typeof dictVal === "object" && dictVal.type === "procedure") {
-          executeProcedure(dictVal.body, i);
+          executeProcedure(tokens, dictVal.body, i);
           continue;
         } else {
           stack.push(dictVal);
@@ -1006,63 +691,452 @@ function interpret(
         }
       }
 
-      if (op in operatorHandlers) {
-        operatorHandlers[op]();
-      } else if (debug) {
-        console.warn(`Unhandled operator: ${op}`);
-        svgOut.elementShapes.push(`<!-- Unhandled: ${op} -->`);
+      if (op === "neg") {
+        const v = stack.pop();
+        if (typeof v === "number") stack.push(-v);
+        else if (typeof v === "string" && !isNaN(Number(v))) stack.push(-Number(v));
+        else stack.push(0);
+        continue;
+      }
+
+      if (op === "add") {
+        const b = safePopNumber(stack, 0);
+        const a = safePopNumber(stack, 0);
+        stack.push(a + b);
+        continue;
+      }
+
+      if (op === "sub") {
+        const b = safePopNumber(stack, 0);
+        const a = safePopNumber(stack, 0);
+        stack.push(a - b);
+        continue;
+      }
+
+      if (op === "mul") {
+        const b = safePopNumber(stack, 1);
+        const a = safePopNumber(stack, 1);
+        stack.push(a * b);
+        continue;
+      }
+
+      if (op === "div") {
+        const b = safePopNumber(stack, 1);
+        const a = safePopNumber(stack, 0);
+        stack.push(b === 0 ? 0 : a / b);
+        continue;
+      }
+
+      if (op === "exch") {
+        const b = stack.pop();
+        const a = stack.pop();
+        stack.push(b);
+        stack.push(a);
+        continue;
+      }
+
+      if (op === "dict") {
+        const size = safePopNumber(stack, 0);
+        stack.push({});
+        continue;
+      }
+
+      if (op === "begin") {
+        const d = stack.pop();
+        if (d && typeof d === "object") dictStack.push(d);
+        else dictStack.push({});
+        continue;
+      }
+
+      if (op === "end") {
+        if (dictStack.length > 1) dictStack.pop();
+        continue;
+      }
+
+      if (op === "def") {
+        const value = stack.pop();
+        const key = stack.pop();
+        if (typeof key === "string") dictStack[dictStack.length - 1][key] = value;
+        continue;
+      }
+
+      if (op === "setdash") {
+        const phase = safePopNumber(stack, 0);
+        const arr = stack.pop();
+        if (Array.isArray(arr)) gState.dash = arr.map(Number).join(",");
+        else if (typeof arr === "number") gState.dash = `${arr}`;
+        else gState.dash = null;
+        continue;
+      }
+
+      if (op === "newpath") {
+        path = path.reset();
+        continue;
+      }
+
+      if (op === "moveto") {
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
+        currentX = x;
+        currentY = y;
+        const pos = gState.ctm.applyPoint(x, y);
+        path.moveTo(pos.x, pos.y);
+        gState.lastTextPos = { x, y };
+        continue;
+      }
+
+      if (op === "rmoveto") {
+        const dy = safePopNumber(stack, 0);
+        const dx = safePopNumber(stack, 0);
+        currentX += dx;
+        currentY += dy;
+        const pos = gState.ctm.applyPoint(currentX, currentY);
+        path.moveTo(pos.x, pos.y);
+        // path.moveToRel(pos.x, pos.y);
+        gState.lastTextPos = { x: currentX, y: currentY };
+        continue;
       }
 
       if (op === "lineto") {
-        // Sempre cheque se é segmento simple (M L) e flush se ahead indica fim
-        if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
-          flushPathAsStroke(path, gState, svgOut);
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
+        currentX = x;
+        currentY = y;
+        const pos = gState.ctm.applyPoint(x, y);
+        path.lineTo(pos.x, pos.y);
+
+        // Verifica se é uma linha simples (moveto + lineto seguido de moveto ou texto)
+        if (
+          path.parts.length === 2 &&
+          path.parts[0].startsWith("M ") &&
+          path.parts[1].startsWith("L ") &&
+          isSimpleLineAhead(tokens, i + 1)
+        ) {
+          // if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
+          flushPath(path, gState, svgOut, StrokeOnly);
           path = path.reset(); // Reset imediato para próximo moveto
         }
+        continue;
       }
 
-      if (op === "stroke" && path.length() > 0) {
-        flushPathAsStroke(path, gState, svgOut);
-        path.clear();
+      if (op === "rlineto") {
+        const dy = safePopNumber(stack, 0);
+        const dx = safePopNumber(stack, 0);
+        currentX += dx;
+        currentY += dy;
+        const pos = gState.ctm.applyPoint(currentX, currentY);
+        path.lineTo(pos.x, pos.y);
+        // path.lineToRel(pos.x, pos.y);
+        continue;
       }
-    }
-  }
 
-  if (path.length() > 0) {
-    // Se for multi-subpath acumulado, split manualmente em paths isolados (fallback)
-    const allParts = path.parts;
-    if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
-      let subPath = new PathBuilder();
-      subPath.reset();
-      for (const part of allParts) {
-        if (part.startsWith("M ")) {
-          if (subPath.length() > 0) {
-            flushPathAsStroke(subPath, gState, svgOut);
-            subPath = subPath.reset();
-          }
-          subPath.parts.push(part);
-        } else if (part.startsWith("L ")) {
-          subPath.parts.push(part);
-          if (subPath.length() === 2) {
-            // Emit simple M L
-            flushPathAsStroke(subPath, gState, svgOut);
-            subPath = subPath.reset();
+      if (op === "curveto") {
+        const y = safePopNumber(stack, 0),
+          x = safePopNumber(stack, 0);
+        const y2 = safePopNumber(stack, 0),
+          x2 = safePopNumber(stack, 0);
+        const y1 = safePopNumber(stack, 0),
+          x1 = safePopNumber(stack, 0);
+        currentX = x;
+        currentY = y;
+        const pos1 = gState.ctm.applyPoint(x1, y1);
+        const pos2 = gState.ctm.applyPoint(x2, y2);
+        const pos3 = gState.ctm.applyPoint(x, y);
+        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        continue;
+      }
+
+      if (op === "rcurveto") {
+        const dy = safePopNumber(stack, 0),
+          dx = safePopNumber(stack, 0);
+        const dy2 = safePopNumber(stack, 0),
+          dx2 = safePopNumber(stack, 0);
+        const dy1 = safePopNumber(stack, 0),
+          dx1 = safePopNumber(stack, 0);
+        const x1 = currentX + dx1,
+          y1 = currentY + dy1;
+        const x2 = currentX + dx2,
+          y2 = currentY + dy2;
+        currentX += dx;
+        currentY += dy;
+        const x = currentX,
+          y = currentY;
+        const pos1 = gState.ctm.applyPoint(x1, y1);
+        const pos2 = gState.ctm.applyPoint(x2, y2);
+        const pos3 = gState.ctm.applyPoint(x, y);
+        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        // path.curveToRel(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+        continue;
+      }
+
+      if (op === "closepath") {
+        path.close();
+        continue;
+      }
+
+      if (op === "stroke") {
+        flushPath(path, gState, svgOut, StrokeOnly);
+        path = path.reset();
+        continue;
+      }
+
+      if (op === "fill" || op === "eofill" || op === "evenodd") {
+        // Verifica se o path é um retângulo simples para otimização
+        if (isRectanglePath(path)) {
+          const rect = extractRectangle(path, gState);
+          if (rect) {
+            svgOut.elementShapes.push(rect.rect);
+            path.parts = [];
+            continue;
           }
         }
+        flushPath(path, gState, svgOut, FillOnly);
+        path = path.reset();
+        continue;
       }
-      if (subPath.length() > 0) flushPathAsStroke(subPath, gState, svgOut);
-    } else {
-      // Legacy: Emit como um
-      const d = path.toPath();
-      svgOut.elementShapes.push(emitSVGPath(d, gState, false, true));
+
+      if (op === "setrgbcolor") {
+        const b = safePopNumber(stack, 0);
+        const g = safePopNumber(stack, 0);
+        const r = safePopNumber(stack, 0);
+        const rgb = color2rgb([r, g, b]).toString();
+        gState.fill = rgb;
+        gState.stroke = rgb;
+        continue;
+      }
+
+      if (op === "setgray") {
+        const v = safePopNumber(stack, 0);
+        const rgb = gray2rgb(v).toString();
+        gState.fill = rgb;
+        gState.stroke = rgb;
+        continue;
+      }
+
+      if (op === "setcmykcolor") {
+        const k = safePopNumber(stack, 0);
+        const y = safePopNumber(stack, 0);
+        const m = safePopNumber(stack, 0);
+        const c = safePopNumber(stack, 0);
+        const rgb = cmyk2rgb([c, m, y, k]).toString();
+        gState.fill = rgb;
+        gState.stroke = rgb;
+        continue;
+      }
+
+      if (op === "setlinewidth") {
+        gState.strokeWidth = safePopNumber(stack, 1);
+        continue;
+      }
+
+      if (op === "setlinecap") {
+        const v = stack.pop();
+        if (typeof v === "number")
+          gState.lineCap = v === 0 ? "butt" : v === 1 ? "round" : "square"; // fallback
+        else if (typeof v === "string") gState.lineCap = v;
+        continue;
+      }
+
+      if (op === "setlinejoin") {
+        const v = stack.pop();
+        if (typeof v === "number")
+          gState.lineJoin = v === 0 ? "miter" : v === 1 ? "round" : v === 2 ? "bevel" : v === 3 ? "arcs" : "miter"; // fallback
+        else if (typeof v === "string") gState.lineJoin = v;
+        continue;
+      }
+
+      if (op === "translate") {
+        const ty = safePopNumber(stack, 0);
+        const tx = safePopNumber(stack, 0);
+        gState.ctm = gState.ctm.translate(tx, ty);
+        continue;
+      }
+
+      if (op === "scale") {
+        const sy = safePopNumber(stack, 1);
+        const sx = safePopNumber(stack, 1);
+        gState.ctm = gState.ctm.scale(sx, sy);
+        continue;
+      }
+
+      if (op === "rotate") {
+        const angle = safePopNumber(stack, 0);
+        gState.ctm = gState.ctm.rotate(angle);
+        continue;
+      }
+
+      if (op === "gsave") {
+        gStack.push(cloneGraphic(gState));
+        continue;
+      }
+
+      if (op === "grestore") {
+        if (gStack.length === 0) return;
+        const st = gStack.pop();
+        if (!st) return;
+
+        if (st.clipStack.length > gState.clipStack.length) {
+          for (let j = gState.clipStack.length; j < st.clipStack.length; j++) {
+            const clipPath = st.clipStack[j];
+            svgOut.defs.push(`<clipPath id="clip${clipIdCounter++}"><path d="${clipPath}" /></clipPath>`);
+          }
+        }
+
+        gState = st;
+        continue;
+      }
+
+      if (op === "arc") {
+        handleArc(stack, gState, svgOut);
+        continue;
+      }
+
+      if (op === "clip") {
+        if (path.length() > 0) {
+          const clipPath = path.toPath();
+          const clipId = `clip${clipIdCounter++}`;
+          svgOut.defs.push(`<clipPath id="${clipId}"><path d="${clipPath}" /></clipPath>`);
+          gState.clipStack.push(clipPath);
+          path.clear();
+        }
+        continue;
+      }
+
+      if (op === "image" || op === "imagemask") {
+        svgOut.elementShapes.push(
+          `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="${DEFAULT_IMAGE}" />`
+        );
+        continue;
+      }
+
+      if (op === "findfont") {
+        const fname = stack.pop();
+        if (typeof fname === "string") {
+          stack.push({ font: fname });
+        } else {
+          stack.push({ font: String(fname) });
+        }
+        continue;
+      }
+
+      if (op === "scalefont") {
+        const size = safePopNumber(stack, 0);
+        const fontObj = stack.pop();
+        if (fontObj && typeof fontObj === "object") {
+          fontObj.size = size;
+          stack.push(fontObj);
+        } else {
+          stack.push({ font: String(fontObj), size });
+        }
+        continue;
+      }
+
+      if (op === "setfont") {
+        const sFont = stack.pop();
+        if (sFont && typeof sFont === "object") {
+          gState.font = sFont.font ?? gState.font;
+          gState.fontSize = sFont.size ?? gState.fontSize;
+        } else if (typeof sFont === "string") {
+          gState.font = sFont;
+        }
+        continue;
+      }
+
+      if (op === "show") {
+        const s = String(stack.pop() ?? "");
+        const escaped = escapeXML(s);
+        if (gState.lastTextPos) {
+          const p = gState.ctm.applyPoint(gState.lastTextPos.x, gState.lastTextPos.y);
+          svgOut.elementShapes.push(
+            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}">${escaped}</text>`
+          );
+        }
+        path = path.reset(); // Limpa path após show
+        continue;
+      }
+      if (op === "showpage") {
+        continue;
+      }
+
+      if (op === "shfill") {
+        const shading = stack.pop();
+
+        if (shading && typeof shading === "object") {
+          if (shading?.ShadingType === 2) {
+            const coords = shading?.Coords;
+            const c0 = color2rgb(shading?.Function?.C0 || [1, 0, 0]).toString();
+            const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 1]).toString();
+            const gradId = `grad${clipIdCounter++}`;
+            svgOut.defs.push(
+              `<linearGradient id="${gradId}" x1="${numFmt(coords[0])}" y1="${numFmt(coords[1])}" x2="${numFmt(coords[2])}" y2="${numFmt(coords[3])}">
+            <stop offset="0" stop-color="${c0}" />
+            <stop offset="1" stop-color="${c1}" />
+          </linearGradient>`
+            );
+            if (path.length() > 0) {
+              const d = path.toPath();
+              svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" />`);
+              path.clear();
+            }
+          }
+        } else {
+          svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
+        }
+        continue;
+      }
+
+      if (op === "setcolorspace") {
+        continue;
+      }
+
+      // default: unhandled operator — comment but avoid corrupting stack
+      svgOut.elementShapes.push(`<!-- Unhandled operator: ${op} -->`);
     }
-    path.clear();
   }
+  if (path.length() > 0) {
+    flushPath(path, gState, svgOut, StrokeOnly);
+  }
+}
+
+// (not implemented) Splits multi-subpath paths into single subpaths
+function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elementShapes: string[] }) {
+  // colocado no if (path.length() > 0) { ... }
+  // Se for multi-subpath acumulado, split manualmente em paths isolados (fallback)
+  const allParts = path.parts;
+  if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
+    let subPath = new PathBuilder();
+    subPath.reset();
+    for (const part of allParts) {
+      if (part.startsWith("M ")) {
+        if (subPath.length() > 0) {
+          flushPath(subPath, gState, svgOut, StrokeOnly);
+          subPath = subPath.reset();
+        }
+        subPath.parts.push(part);
+      } else if (part.startsWith("L ")) {
+        subPath.parts.push(part);
+        if (subPath.length() === 2) {
+          // Emit simple M L
+          flushPath(subPath, gState, svgOut, StrokeOnly);
+          subPath = subPath.reset();
+        }
+      }
+    }
+    if (subPath.length() > 0) flushPath(subPath, gState, svgOut, StrokeOnly);
+  } else {
+    // Legacy: Emit como um
+    const d = path.toPath();
+    svgOut.elementShapes.push(emitSVGPath(d, gState, StrokeOnly));
+  }
+  path.clear();
 }
 
 function extractBoundingBox(ps: string) {
   const match = /%%BoundingBox:\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/.exec(ps);
-  return match ? { llx: Number(match[1]), lly: Number(match[2]), urx: Number(match[3]), ury: Number(match[4]) } : null;
+  if (match) {
+    return { llx: Number(match[1]), lly: Number(match[2]), urx: Number(match[3]), ury: Number(match[4]) };
+  }
+  return null;
 }
 
 function convertPostscriptToSVG(psText: string): string {
@@ -1070,8 +1144,8 @@ function convertPostscriptToSVG(psText: string): string {
   const tokens = tokenize(psText);
   const svgOut = { defs: [] as string[], elementShapes: [] as string[], elementTexts: [] as string[] };
   let viewBoxAttr = "";
-  let height = 0,
-    width = 0;
+  let height = 0;
+  let width = 0;
 
   if (bBox) {
     width = bBox.urx - bBox.llx;
@@ -1083,12 +1157,12 @@ function convertPostscriptToSVG(psText: string): string {
     viewBoxAttr = `viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"`;
   }
 
-  interpret(tokens, svgOut, bBox ?? undefined, true);
+  interpret(tokens, svgOut, bBox ?? undefined);
 
   const defs = svgOut.defs.join("\n");
   const shapes = svgOut.elementShapes.join("\n");
   const texts = svgOut.elementTexts.join("\n");
-  const body = `<g transform="translate(0, ${height}) scale(1, -1)">\n${shapes}\n${texts}\n</g>`;
+  const body = `<g transform="translate(0, ${height}) scale(1,-1)">\n${shapes}\n</g>\n${texts}`;
   const svg = `<?xml version="1.0" encoding="utf-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" ${viewBoxAttr}>\n${defs}\n${body}\n</svg>`;
   return svg;
 }
@@ -1097,7 +1171,6 @@ function convertSvgToFile(inPath: string, outPath: string) {
   const file = fs.readFileSync(`${inPath}.ps`, "utf8");
   const svg = convertPostscriptToSVG(file);
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
-  console.log(`Converted: ${inPath} -> ${outPath}.svg`);
 }
 convertSvgToFile(fileInputName, fileOutputName);
 
