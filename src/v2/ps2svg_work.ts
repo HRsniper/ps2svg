@@ -181,13 +181,13 @@ class PathBuilder {
 
   quadraticCurveTo(x1: number, y1: number, x: number, y: number) {
     const p1 = this.transformPoint(x1, y1);
-    const p2 = this.transformPoint(x, y);
-    this.parts.push(`Q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`Q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   quadraticCurveToRel(dx1: number, dy1: number, dx: number, dy: number) {
     const p1 = this.transformPoint(dx1, dy1);
-    const p2 = this.transformPoint(dx, dy);
-    this.parts.push(`q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   smoothQuadraticCurveTo(x: number, y: number) {
@@ -589,6 +589,10 @@ function interpret(
   let currentY = 0;
   let clipIdCounter = 0;
 
+  // Inicializa path com modo correto
+  const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+  path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
+
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     const tokenType = token.type;
@@ -701,8 +705,7 @@ function interpret(
       if (op === "moveto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(x, y);
-        path.moveTo(pos.x, pos.y);
+        path.moveTo(x, y);
         currentX = x;
         currentY = y;
         gState.lastTextPos = { x, y };
@@ -712,8 +715,7 @@ function interpret(
       if (op === "rmoveto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(dx, dy);
-        path.moveToRel(pos.x, pos.y);
+        path.moveToRel(dx, dy);
         currentX += dx;
         currentY += dy;
         gState.lastTextPos = { x: currentX, y: currentY };
@@ -723,8 +725,7 @@ function interpret(
       if (op === "lineto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(x, y);
-        path.lineTo(pos.x, pos.y);
+        path.lineTo(x, y);
         currentX = x;
         currentY = y;
 
@@ -745,8 +746,7 @@ function interpret(
       if (op === "rlineto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(dx, dy);
-        path.lineToRel(pos.x, pos.y);
+        path.lineToRel(dx, dy);
         currentX += dx;
         currentY += dy;
         // if (Math.abs(dy) < 1e-6) path.horizontalLineToRel(dx); // h dx raw
@@ -761,10 +761,7 @@ function interpret(
         const x2 = safePopNumber(stack, 0);
         const y1 = safePopNumber(stack, 0);
         const x1 = safePopNumber(stack, 0);
-        const pos1 = gState.ctm.applyPoint(x1, y1);
-        const pos2 = gState.ctm.applyPoint(x2, y2);
-        const pos3 = gState.ctm.applyPoint(x, y);
-        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        path.curveTo(x1, y1, x2, y2, x, y);
         currentX = x;
         currentY = y;
         continue;
@@ -777,16 +774,7 @@ function interpret(
         const dx2 = safePopNumber(stack, 0);
         const dy1 = safePopNumber(stack, 0);
         const dx1 = safePopNumber(stack, 0);
-        const x1 = currentX + dx1;
-        const y1 = currentY + dy1;
-        const x2 = currentX + dx2;
-        const y2 = currentY + dy2;
-        const x = currentX;
-        const y = currentY;
-        const pos1 = gState.ctm.applyPoint(x1, y1);
-        const pos2 = gState.ctm.applyPoint(x2, y2);
-        const pos3 = gState.ctm.applyPoint(x, y);
-        path.curveToRel(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        path.curveToRel(dx1, dy1, dx2, dy2, dx, dy);
         currentX += dx;
         currentY += dy;
         continue;
@@ -863,6 +851,9 @@ function interpret(
         const ty = safePopNumber(stack, 0);
         const tx = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.translate(tx, ty);
+        // Atualiza modo do path quando CTM muda
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -870,17 +861,24 @@ function interpret(
         const sy = safePopNumber(stack, 1);
         const sx = safePopNumber(stack, 1);
         gState.ctm = gState.ctm.scale(sx, sy);
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
       if (op === "rotate") {
         const angle = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.rotate(angle);
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
       if (op === "gsave") {
         gStack.push(cloneGraphic(gState));
+        // Se há transformação, use coordenadas locais
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -897,6 +895,9 @@ function interpret(
         }
 
         gState = st;
+        // Atualiza modo do path ao restaurar estado gráfico
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -909,11 +910,21 @@ function interpret(
 
         const { a, b, c, d, e, f } = gState.ctm;
 
-        const scaleX = Math.hypot(a, b) || 1;
-        const scaleY = Math.hypot(c, d) || 1;
-
-        const rx = Math.abs(r * scaleX);
-        const ry = Math.abs(r * scaleY);
+        // Se estamos em modo local (needGroup), use raio original
+        // Se não, aplique a escala da CTM
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        let rx, ry;
+        if (needGroup) {
+          // Coordenadas locais - raio não escalado
+          rx = Math.abs(r);
+          ry = Math.abs(r);
+        } else {
+          // Coordenadas globais - aplica escala da CTM
+          const scaleX = Math.hypot(a, b) || 1;
+          const scaleY = Math.hypot(c, d) || 1;
+          rx = Math.abs(r * scaleX);
+          ry = Math.abs(r * scaleY);
+        }
 
         // Sempre use PathBuilder for arc/circle/elipse: <path M A ...> (no <circle>/<ellipse>)
         // For full: two A segments (SVG2 Sec. 8.3.8 ex.)
@@ -921,22 +932,20 @@ function interpret(
         const start = { x: x + r * Math.cos(startRad), y: y + r * Math.sin(startRad) };
         const endRad = ang2 * (Math.PI / 180);
         const end = { x: x + r * Math.cos(endRad), y: y + r * Math.sin(endRad) };
-        const pStart = gState.ctm.applyPoint(start.x, start.y);
-        const pEnd = gState.ctm.applyPoint(end.x, end.y);
 
         const delta = Math.abs(ang2 - ang1);
         const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
 
-        path.moveTo(pStart.x, pStart.y); // Start point (PLRM arc starts at first angle)
+        path.moveTo(start.x, start.y); // Start point (PLRM arc starts at first angle)
 
         if (isFullCircle) {
           // Full: two semi-arcs (large=1, sweep=1 for CW 360°)
           // Assume start at ang1=0 (right), mid at 180° left
           const midRad = (ang1 + 180) % 360;
           const mid = { x: x + r * Math.cos((midRad * Math.PI) / 180), y: y + r * Math.sin((midRad * Math.PI) / 180) };
-          const pMid = gState.ctm.applyPoint(mid.x, mid.y);
-          path.ellipseTo(rx, ry, 0, 1, 1, pMid.x, pMid.y); // First 180°
-          path.ellipseTo(rx, ry, 0, 1, 1, pStart.x, pStart.y); // Second 180° close loop
+
+          path.ellipseTo(rx, ry, 0, 1, 1, mid.x, mid.y); // First 180°
+          path.ellipseTo(rx, ry, 0, 1, 1, start.x, start.y); // Second 180° close loop
           path.close(); // Z for fillable circle
           currentX = end.x;
           currentY = end.y;
@@ -945,7 +954,7 @@ function interpret(
           const normalizedDelta = (((ang2 - ang1) % 360) + 360) % 360;
           const largeArc = normalizedDelta > 180 ? 1 : 0;
           const sweep = normalizedDelta > 0 ? 1 : 0;
-          path.ellipseTo(rx, ry, 0, largeArc, sweep, pEnd.x, pEnd.y); // Single A
+          path.ellipseTo(rx, ry, 0, largeArc, sweep, end.x, end.y); // Single A
           currentX = end.x;
           currentY = end.y;
         }

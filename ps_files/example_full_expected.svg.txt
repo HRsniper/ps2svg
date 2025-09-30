@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <g transform="translate(0, 400) scale(1,-1)">
+
+    <!-- Linha reta -->
+    <path d="M 50 50 L 150 150" fill="none" stroke="black" stroke-width="1" />
+
+    <!-- Retângulo -->
+    <path d="M 200 50 l 100 0 l 0 50 l -100 0 Z" fill="black" stroke="none" />
+    <!-- <path d="M 200 50 L 300 50 L 300 100 L 200 100 Z" fill="black" stroke="none" /> -->
+
+    <!-- Círculo -->
+    <path d="M 90 150 A 40 40 0 1 0 160 200 A 40 40 0 1 0 90 150 Z" fill="none" stroke="black" stroke-width="1" />
+
+    <!-- Elipse -->
+    <g transform="translate(300 200) scale(30 10)">
+      <path d="M 1 0 A 1 1 0 1 0 -1 0 A 1 1 0 1 0 1 0 Z" fill="none" stroke="black" stroke-width="1" />
+    </g>
+
+    <!-- Polígono -->
+    <path d="M 50 250 L 100 300 L 150 250 Z" fill="none" stroke="black" stroke-width="1" />
+
+    <!-- Curva Bézier -->
+    <path d="M 50 350 C 100 380 150 320 200 350" fill="none" stroke="black" stroke-width="1" />
+
+    <!-- Texto -->
+    <text transform="scale(1 -1)" x="100" y="-370" font-family="Times-Roman" font-size="18" fill="black"
+      stroke="none">Olá Mundo</text>
+
+    <!-- Cor RGB -->
+    <path d="M 280 300 A 30 30 0 1 0 220 300 A 30 30 0 1 0 280 300 Z" fill="rgb(51,153,204)" stroke="none" />
+    <!-- Cor Gray -->
+    <path d="M 370 300 A 20 20 0 1 0 330 300 A 20 20 0 1 0 370 300 Z" fill="rgb(128,128,128)" stroke="none" />
+    <!-- Cor CMYK -->
+    <path d="M 320 350 A 20 20 0 1 0 280 350 A 20 20 0 1 0 320 350 Z" fill="rgb(255,128,128)" stroke="none" />
+
+    <!-- Linha com estilo -->
+    <path d="M 250 50 L 350 150" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-dasharray="4 2" />
+
+    <!-- Transformações -->
+    <g transform="translate(100 100) rotate(45) scale(2 1)">
+      <path d="M 30 0 A 30 30 0 1 0 -30 0 A 30 30 0 1 0 30 0 Z" fill="none" stroke="black" stroke-width="1" />
+    </g>
+
+    <!-- Imagem -->
+    <image transform="scale(1,-1)" x="10" y="-320" width="50" height="50"
+      href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAYklEQVR4AYSP0QkAIQxDY1fSmXQmncnO1OsT7ufgUAyE5FnVJEWtNXrvMeeMvXe8C28ZKgG5u8YYaq0d4cmMEihpITwZJZB9T1ACAaP7FTmmrLVKjiz54CM8GR2/yPx/X4EHAAD//2JOIXcAAAAGSURBVAMAAcFQEU64jdoAAAAASUVORK5CYII=" />
+
+    <!-- Gradiente Linear -->
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="red" />
+        <stop offset="100%" stop-color="blue" />
+      </linearGradient>
+    </defs>
+    <path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="url(#grad1)" stroke="none" />
+
+    <!-- Gradiente Radial -->
+    <defs>
+      <radialGradient id="grad2">
+        <stop offset="0%" stop-color="yellow" />
+        <stop offset="100%" stop-color="black" />
+      </radialGradient>
+    </defs>
+    <path d="M 280 40 A 30 30 0 1 0 220 40 A 30 30 0 1 0 280 40 Z" fill="url(#grad2)" />
+
+    <!-- Padrão -->
+    <defs>
+      <pattern id="pattern1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+        <path d="M 0 0 L 10 0 L 10 10 L 0 10 Z" fill="red" stroke="none" />
+        <path d="M 10 10 L 20 10 L 20 20 L 10 20 Z" fill="green" stroke="none" />
+      </pattern>
+    </defs>
+    <path d="M 250 200 A 50 50 0 1 0 150 200 A 50 50 0 1 0 250 200 Z" fill="url(#pattern1)" stroke="none" />
+
+    <!-- Funções def -->
+    <path d="M 59.784 66.176 L 59.784 82.264 L 136.309 82.264 L 136.309 66.176 L 59.784 66.176 Z"
+      fill="rgb(242, 212, 209)" stroke="none" />
+
+  </g>
+</svg>
