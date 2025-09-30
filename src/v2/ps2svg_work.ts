@@ -594,9 +594,6 @@ function handleArc(
   const y = safePopNumber(stack, 0);
   const x = safePopNumber(stack, 0);
 
-  const start = anglePoint(x, y, r, ang1);
-  const end = anglePoint(x, y, r, ang2);
-
   const { a, b, c, d, e, f } = gState.ctm;
 
   const scaleX = Math.hypot(a, b) || 1;
@@ -605,50 +602,39 @@ function handleArc(
   const rx = Math.abs(r * scaleX);
   const ry = Math.abs(r * scaleY);
 
-  const pStart = gState.ctm.applyPoint(start.x, start.y);
-  const pEnd = gState.ctm.applyPoint(end.x, end.y);
-
-  const delta = (((ang2 - ang1) % 360) + 360) % 360;
-
-  const isFullCircle = Math.abs(delta) < 1e-6;
-  const isUniformTransform = Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6;
-  const isArcClosed = Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6;
+  // Normaliza ângulos para verificar círculo completo
+  const delta = Math.abs(ang2 - ang1);
+  const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
 
   if (isFullCircle) {
+    // Verifica se é transformação uniforme (círculo vs elipse)
+    const isUniformScale = Math.abs(rx - ry) < 1e-6;
     const cP = gState.ctm.applyPoint(x, y);
-    const avgR = (rx + ry) / 2;
-    if (isUniformTransform) {
-      svgOut.elementShapes.push(
-        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
-      );
-    } else {
-      const midAng = ang1 + 180;
-      const mid = anglePoint(x, y, r, midAng);
-      const pMid = gState.ctm.applyPoint(mid.x, mid.y);
 
-      const d1 = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pMid.y)}`;
-      const d2 = `M ${numFmt(pMid.x)} ${numFmt(pMid.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-      svgOut.elementShapes.push(
-        `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
-      );
-      svgOut.elementShapes.push(
-        `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
-      );
-      // const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pEnd.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pStart.x)} ${numFmt(pStart.y)}`;
-      // svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
+    if (isUniformScale) {
+      // Círculo perfeito
+
+      const pathStr = `M ${numFmt(cP.x + rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x - rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x + rx)} ${numFmt(cP.y)} Z`;
+      svgOut.elementShapes.push(emitSVGPath(pathStr, gState, StrokeOnly));
+    } else {
+      // Elipse: usa elemento <g> com transform para escala
+      const pathStr = `M ${numFmt(cP.x + rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x - rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x + rx)} ${numFmt(cP.y)} Z`;
+      svgOut.elementShapes.push(emitSVGPath(pathStr, gState, StrokeOnly));
     }
   } else {
-    const largeArc = delta > 180 ? 1 : 0;
-    const sweep = delta > 0 ? 1 : 0;
+    // Arco parcial
+    const start = anglePoint(x, y, r, ang1);
+    const end = anglePoint(x, y, r, ang2);
+    const pStart = gState.ctm.applyPoint(start.x, start.y);
+    const pEnd = gState.ctm.applyPoint(end.x, end.y);
 
-    if (!isArcClosed) {
-      const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-      const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
-      // svgOut.elementShapes.push(
-      //   `<path d="${dd}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
-      // );
-      svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
-    }
+    const normalizedDelta = (((ang2 - ang1) % 360) + 360) % 360;
+
+    const largeArc = normalizedDelta > 180 ? 1 : 0;
+    const sweep = normalizedDelta > 0 ? 1 : 0;
+
+    const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
+    svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
   }
 }
 
@@ -727,87 +713,11 @@ function interpret(
         continue;
       }
 
-      if (op === "dup") {
-        const v = stack[stack.length - 1];
-        if (v !== undefined) stack.push(v);
-        continue;
-      }
-
-      if (op === "pop") {
-        stack.pop();
-        continue;
-      }
-
-      if (op === "index") {
-        const n = safePopNumber(stack, 0);
-        const idx = stack.length - 1 - n;
-        if (idx >= 0 && idx < stack.length) {
-          stack.push(stack[idx]);
-        }
-        continue;
-      }
-
-      if (op === "roll") {
-        const j = safePopNumber(stack, 0); // number of positions to roll
-        const n = safePopNumber(stack, 0); // number of elements
-        if (n > 0 && n <= stack.length) {
-          const elements = stack.splice(stack.length - n, n);
-          const effectiveJ = ((j % n) + n) % n;
-          const rolled = [...elements.slice(-effectiveJ), ...elements.slice(0, -effectiveJ)];
-          stack.push(...rolled);
-        }
-        continue;
-      }
-
-      if (op === "copy") {
-        const n = safePopNumber(stack, 0);
-        if (n > 0 && n <= stack.length) {
-          const toCopy = stack.slice(stack.length - n);
-          stack.push(...toCopy);
-        }
-        continue;
-      }
-
-      if (op === "clear") {
-        stack.length = 0;
-        continue;
-      }
-
-      if (op === "count") {
-        stack.push(stack.length);
-        continue;
-      }
-
       if (op === "exch") {
         const b = stack.pop();
         const a = stack.pop();
         stack.push(b);
         stack.push(a);
-        continue;
-      }
-
-      if (op === "array") {
-        const size = safePopNumber(stack, 0);
-        stack.push(new Array(size).fill(null));
-        continue;
-      }
-
-      if (op === "aload") {
-        const arr = stack.pop();
-        if (Array.isArray(arr)) {
-          stack.push(...arr);
-          stack.push(arr);
-        }
-        continue;
-      }
-
-      if (op === "astore") {
-        const arr = stack.pop();
-        if (Array.isArray(arr) && arr.length <= stack.length) {
-          const values = stack.splice(stack.length - arr.length, arr.length);
-          arr.splice(0, arr.length, ...values);
-          stack.push(arr);
-        }
         continue;
       }
 
