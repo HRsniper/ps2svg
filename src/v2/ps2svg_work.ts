@@ -235,7 +235,7 @@ class PathBuilder {
   }
 }
 
-type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
+type Token = { type: "number" | "name" | "string" | "operator" | "brace" | "bracket"; value: string };
 
 interface GraphicState {
   ctm: Matrix;
@@ -270,6 +270,7 @@ function tokenize(ps: string): Token[] {
   const stringRe = /\((?:\\.|[^\\\)])*\)/y; // (foo) (a\)b)
   const nameRe = /\/?[A-Za-z_\-\.\?\*][A-Za-z0-9_\-\.\?\*]*/y; //  name /foo /foo-bar
   const braceRe = /[\{\}]/y;
+  const bracketRe = /[\[\]]/y;
   const whitespaceRe = /\s*/y;
 
   const tokens: Token[] = [];
@@ -306,6 +307,15 @@ function tokenize(ps: string): Token[] {
     if (match) {
       tokens.push({ type: "brace", value: match[0] });
       index = braceRe.lastIndex;
+      continue;
+    }
+
+    // Brackets (arrays)
+    bracketRe.lastIndex = index;
+    match = bracketRe.exec(ps);
+    if (match) {
+      tokens.push({ type: "bracket", value: match[0] });
+      index = bracketRe.lastIndex;
       continue;
     }
 
@@ -413,6 +423,25 @@ function parseProcedure(tokens: Token[], startIndex: number): { procedure: Token
     index++;
   }
   return { procedure, nextIndex: index };
+}
+
+function parseArray(tokens: Token[], startIndex: number): { array: (number | string)[]; nextIndex: number } {
+  const array: (number | string)[] = [];
+  let index = startIndex;
+
+  while (index < tokens.length) {
+    const token = tokens[index];
+    if (token.type === "bracket" && token.value === "]") {
+      return { array, nextIndex: index + 1 };
+    }
+    if (token.type === "number") {
+      array.push(Number(token.value));
+    } else if (token.type === "string" || token.type === "name") {
+      array.push(token.value);
+    }
+    index++;
+  }
+  return { array, nextIndex: index };
 }
 
 const DEFAULT_GRAPHIC_STATE: GraphicState = {
@@ -599,6 +628,10 @@ function interpret(
     else if (tokenType === "brace" && tokenValue === "{") {
       const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
       stack.push({ type: "procedure", body: procedure });
+      i = nextIndex - 1;
+    } else if (tokenType === "bracket" && tokenValue === "[") {
+      const { array, nextIndex } = parseArray(tokens, i + 1);
+      stack.push(array);
       i = nextIndex - 1;
     } else if (tokenType === "operator") {
       const op = tokenValue;

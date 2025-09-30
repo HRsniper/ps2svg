@@ -12,17 +12,17 @@
 <path d="M 280 300 A 30 30 0 1 1 220 300 A 30 30 0 1 1 280 300 Z" fill="none" stroke="rgb(51, 153, 204)" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 370 300 A 20 20 0 1 1 330 300 A 20 20 0 1 1 370 300 Z" fill="none" stroke="rgb(128, 128, 128)" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
 <path d="M 320 350 A 20 20 0 1 1 280 350 A 20 20 0 1 1 320 350 Z" fill="none" stroke="rgb(255, 128, 128)" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
-<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/>
-<g transform="translate(100 100) scale(2 1) rotate(45) skewY(56.31)"><path d="M 30 0 A 30 30 0 1 1 -30 0 A 30 30 0 1 1 30 0 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/></g>
+<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="4 2"/>
+<g transform="translate(100 100) scale(2 1) rotate(45) skewY(56.31)"><path d="M 30 0 A 30 30 0 1 1 -30 0 A 30 30 0 1 1 30 0 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="4 2"/></g>
 <!-- image/imagemask not implemented -->
 <image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkltYWdlbTwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMjk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPk5vdDwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMzk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkZvdW5kPC90ZXh0Pgo8L3N2Zz4K" />
 <!-- shfill not fully implemented -->
 <!-- shfill not fully implemented -->
 <!-- Unhandled operator: makepattern -->
 <!-- Unhandled operator: setpattern -->
-<path d="M 250 200 M 300 200 A 50 50 0 1 1 200 200 A 50 50 0 1 1 300 200 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/>
-<path d="Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/>
-<path d="M 59.784 66.176 l 0 16.088 l 76.525 0 l 0 -16.088 l -76.525 0 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="2"/>
+<path d="M 250 200 M 300 200 A 50 50 0 1 1 200 200 A 50 50 0 1 1 300 200 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="4 2"/>
+<path d="Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="4 2"/>
+<path d="M 59.784 66.176 l 0 16.088 l 76.525 0 l 0 -16.088 l -76.525 0 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="4 2"/>
 </g>
 
 </svg>
