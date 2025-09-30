@@ -240,12 +240,6 @@ function tokenize(ps: string): Token[] {
     stringRe.lastIndex = index;
     let match = stringRe.exec(ps);
     if (match) {
-      // const raw = match[0].slice(1, -1).replace(/\\([()\\nrt])/g, (s, g) => {
-      //   if (g === "n") return "\n";
-      //   if (g === "r") return "\r";
-      //   if (g === "t") return "\t";
-      //   return g;
-      // });
       const raw = unescapePostscriptString(match[0].slice(1, -1));
       tokens.push({ type: "string", value: raw });
       index = stringRe.lastIndex;
@@ -429,6 +423,21 @@ function isIdentityMatrix(m: Matrix): boolean {
 function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, addDash = false): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
+  // Use Matrix.decompose pra transform legível (SVG2 Sec. 6.2.3)
+  const decomp = g.ctm.decompose();
+  let transformStr = "";
+  if (!isIdentityMatrix(g.ctm)) {
+    const parts = [];
+    if (Math.abs(decomp.translate.x) > 1e-6 || Math.abs(decomp.translate.y) > 1e-6)
+      parts.push(`translate(${numFmt(decomp.translate.x)} ${numFmt(decomp.translate.y)})`);
+    if (Math.abs(decomp.scale.x - 1) > 1e-6 || Math.abs(decomp.scale.y - 1) > 1e-6)
+      parts.push(`scale(${numFmt(decomp.scale.x)} ${numFmt(decomp.scale.y)})`);
+    if (Math.abs(decomp.rotate) > 1e-6) parts.push(`rotate(${numFmt(decomp.rotate)})`);
+    if (Math.abs(decomp.skew.x) > 1e-6) parts.push(`skewX(${numFmt(decomp.skew.x)})`);
+    if (Math.abs(decomp.skew.y) > 1e-6) parts.push(`skewY(${numFmt(decomp.skew.y)})`);
+    transformStr = parts.join(" ");
+  }
+
   const fillColor = mode.fill ? (g.fill ?? "black") : "none";
   const strokeColor = mode.stroke ? (g.stroke ?? "black") : "none";
   const strokeAttr = mode.stroke ? strokeColor : "none";
@@ -453,70 +462,9 @@ function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: 
   const clipId = g.clipStack.length > 0 ? ` clip-path="url(#clip${g.clipStack.length - 1})"` : "";
 
   if (needGroup) {
-    const m = g.ctm;
-    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
-    return `<g transform="${transform}"${clipId}><path ${pathAttrs}/></g>`;
+    return `<g transform="${transformStr}"${clipId}><path ${pathAttrs}/></g>`;
   } else {
     return `<path ${pathAttrs}${clipId}/>`;
-  }
-}
-
-// Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
-function isRectanglePath(path: PathBuilder): boolean {
-  const parts = path.parts;
-  if (parts.length < 5) return false; // M + 4L + Z
-  if (!parts[0].startsWith("M ")) return false;
-  if (!parts[parts.length - 1].endsWith("Z")) return false;
-  const lines = parts.slice(1, -1);
-  if (lines.length !== 4) return false;
-  return lines.every((p) => p.startsWith("L "));
-}
-
-function extractRectangle(
-  path: PathBuilder,
-  gState: GraphicState
-): { rect: string; minX: number; minY: number; width: number; height: number } | null {
-  if (!isRectanglePath(path)) return null;
-
-  try {
-    const parts = path.parts;
-    const mMatch = parts[0].match(/M\s+([-.\d]+)\s+([-.\d]+)/);
-    const lMatches = parts.slice(1, -1).map((p) => p.match(/L\s+([-.\d]+)\s+([-.\d]+)/));
-
-    if (!mMatch || lMatches.some((m) => !m)) return null;
-
-    const [x1, y1] = mMatch.slice(1).map(Number);
-    const coords = lMatches.map((m) => m!.slice(1).map(Number));
-
-    const [x2, y2] = coords[0];
-    const [x3, y3] = coords[1];
-    const [x4, y4] = coords[2];
-    const [x5, y5] = coords[3];
-
-    // Verificações geométricas
-    if (Math.abs(x5 - x1) > 1e-6 || Math.abs(y5 - y1) > 1e-6) return null;
-    if (Math.abs(x2 - x1) > 1e-6 && Math.abs(y2 - y1) > 1e-6) return null;
-    if (Math.abs(x3 - x2) < 1e-6 || Math.abs(y3 - y2) < 1e-6) return null;
-
-    const xs = [x1, x2, x3, x4, x5];
-    const ys = [y1, y2, y3, y4, y5];
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
-    const width = Math.max(...xs) - minX;
-    const height = Math.max(...ys) - minY;
-
-    const fillColor = gState.fill ?? "black";
-    const rectAttrs = `x="${numFmt(minX)}" y="${numFmt(minY)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${fillColor}"`;
-
-    const m = gState.ctm;
-    const needTransform = !isIdentityMatrix(gState.ctm);
-    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
-
-    const rect = needTransform ? `<g transform="${transform}"><rect ${rectAttrs}/></g>` : `<rect ${rectAttrs}/>`;
-
-    return { rect, minX, minY, width, height };
-  } catch {
-    return null;
   }
 }
 
@@ -527,7 +475,6 @@ function escapeXML(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
 }
 
 function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
@@ -578,64 +525,9 @@ function flushPath(
 ) {
   if (path.length() === 0) return;
   const d = path.toPath();
-  const pathStr = emitSVGPath(d, g, mode);
+  const pathStr = emitSVGPath(d, g, mode, true); // addDash=true pra lines
   svgOut.elementShapes.push(pathStr);
-  path = path.reset();
-}
-
-function handleArc(
-  stack: (number | string | any)[],
-  gState: GraphicState,
-  svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] }
-) {
-  const ang2 = safePopNumber(stack, 0);
-  const ang1 = safePopNumber(stack, 0);
-  const r = safePopNumber(stack, 0);
-  const y = safePopNumber(stack, 0);
-  const x = safePopNumber(stack, 0);
-
-  const { a, b, c, d, e, f } = gState.ctm;
-
-  const scaleX = Math.hypot(a, b) || 1;
-  const scaleY = Math.hypot(c, d) || 1;
-
-  const rx = Math.abs(r * scaleX);
-  const ry = Math.abs(r * scaleY);
-
-  // Normaliza ângulos para verificar círculo completo
-  const delta = Math.abs(ang2 - ang1);
-  const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
-
-  if (isFullCircle) {
-    // Verifica se é transformação uniforme (círculo vs elipse)
-    const isUniformScale = Math.abs(rx - ry) < 1e-6;
-    const cP = gState.ctm.applyPoint(x, y);
-
-    if (isUniformScale) {
-      // Círculo perfeito
-
-      const pathStr = `M ${numFmt(cP.x + rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x - rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x + rx)} ${numFmt(cP.y)} Z`;
-      svgOut.elementShapes.push(emitSVGPath(pathStr, gState, StrokeOnly));
-    } else {
-      // Elipse: usa elemento <g> com transform para escala
-      const pathStr = `M ${numFmt(cP.x + rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x - rx)} ${numFmt(cP.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 1 0 ${numFmt(cP.x + rx)} ${numFmt(cP.y)} Z`;
-      svgOut.elementShapes.push(emitSVGPath(pathStr, gState, StrokeOnly));
-    }
-  } else {
-    // Arco parcial
-    const start = anglePoint(x, y, r, ang1);
-    const end = anglePoint(x, y, r, ang2);
-    const pStart = gState.ctm.applyPoint(start.x, start.y);
-    const pEnd = gState.ctm.applyPoint(end.x, end.y);
-
-    const normalizedDelta = (((ang2 - ang1) % 360) + 360) % 360;
-
-    const largeArc = normalizedDelta > 180 ? 1 : 0;
-    const sweep = normalizedDelta > 0 ? 1 : 0;
-
-    const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-    svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
-  }
+  path = path.reset(); // Usa reset() pra reinit fresh
 }
 
 function interpret(
@@ -669,7 +561,7 @@ function interpret(
       const dictVal = lookupName(op);
       if (dictVal !== undefined) {
         if (dictVal && typeof dictVal === "object" && dictVal.type === "procedure") {
-          executeProcedure(tokens, dictVal.body, i);
+          executeProcedure(tokens, dictVal.body as Token[], i);
           continue;
         } else {
           stack.push(dictVal);
@@ -791,15 +683,15 @@ function interpret(
         currentY = y;
 
         // Verifica se é uma linha simples (moveto + lineto seguido de moveto ou texto)
-        // if (
-        //   path.parts.length === 2 &&
-        //   path.parts[0].startsWith("M ") &&
-        //   path.parts[1].startsWith("L ") &&
-        //   isSimpleLineAhead(tokens, i + 1)
-        // ) {
-        if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
+        if (
+          path.parts.length === 2 &&
+          path.parts[0].startsWith("M ") &&
+          path.parts[1].startsWith("L ") &&
+          isSimpleLineAhead(tokens, i + 1)
+        ) {
+          // if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
           flushPath(path, gState, svgOut, StrokeOnly);
-          path = path.reset(); // Reset imediato para próximo moveto
+          path = path.reset();
         }
         continue;
       }
@@ -811,6 +703,8 @@ function interpret(
         path.lineToRel(pos.x, pos.y);
         currentX += dx;
         currentY += dy;
+        // if (Math.abs(dy) < 1e-6) path.horizontalLineToRel(dx); // h dx raw
+        // else if (Math.abs(dx) < 1e-6) path.verticalLineToRel(dy); // v dy raw
         continue;
       }
 
@@ -864,15 +758,6 @@ function interpret(
       }
 
       if (op === "fill" || op === "eofill" || op === "evenodd") {
-        // Verifica se o path é um retângulo simples para otimização
-        if (isRectanglePath(path)) {
-          const rect = extractRectangle(path, gState);
-          if (rect) {
-            svgOut.elementShapes.push(rect.rect);
-            path = path.reset();
-            continue;
-          }
-        }
         flushPath(path, gState, svgOut, FillOnly);
         path = path.reset();
         continue;
@@ -970,7 +855,57 @@ function interpret(
       }
 
       if (op === "arc") {
-        handleArc(stack, gState, svgOut);
+        const ang2 = safePopNumber(stack, 0);
+        const ang1 = safePopNumber(stack, 0);
+        const r = safePopNumber(stack, 0);
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
+
+        const { a, b, c, d, e, f } = gState.ctm;
+
+        const scaleX = Math.hypot(a, b) || 1;
+        const scaleY = Math.hypot(c, d) || 1;
+
+        const rx = Math.abs(r * scaleX);
+        const ry = Math.abs(r * scaleY);
+
+        // Sempre use PathBuilder for arc/circle/elipse: <path M A ...> (no <circle>/<ellipse>)
+        // For full: two A segments (SVG2 Sec. 8.3.8 ex.)
+        const startRad = ang1 * (Math.PI / 180);
+        const start = { x: x + r * Math.cos(startRad), y: y + r * Math.sin(startRad) };
+        const endRad = ang2 * (Math.PI / 180);
+        const end = { x: x + r * Math.cos(endRad), y: y + r * Math.sin(endRad) };
+        const pStart = gState.ctm.applyPoint(start.x, start.y);
+        const pEnd = gState.ctm.applyPoint(end.x, end.y);
+
+        const delta = Math.abs(ang2 - ang1);
+        const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
+
+        path.moveTo(pStart.x, pStart.y); // Start point (PLRM arc starts at first angle)
+
+        if (isFullCircle) {
+          // Full: two semi-arcs (large=1, sweep=1 for CW 360°)
+          // Assume start at ang1=0 (right), mid at 180° left
+          const midRad = (ang1 + 180) % 360;
+          const mid = { x: x + r * Math.cos((midRad * Math.PI) / 180), y: y + r * Math.sin((midRad * Math.PI) / 180) };
+          const pMid = gState.ctm.applyPoint(mid.x, mid.y);
+          path.ellipseTo(rx, ry, 0, 1, 1, pMid.x, pMid.y); // First 180°
+          path.ellipseTo(rx, ry, 0, 1, 1, pStart.x, pStart.y); // Second 180° close loop
+          path.close(); // Z for fillable circle
+          currentX = end.x;
+          currentY = end.y;
+        } else {
+          // Arco parcial
+          const normalizedDelta = (((ang2 - ang1) % 360) + 360) % 360;
+          const largeArc = normalizedDelta > 180 ? 1 : 0;
+          const sweep = normalizedDelta > 0 ? 1 : 0;
+          path.ellipseTo(rx, ry, 0, largeArc, sweep, pEnd.x, pEnd.y); // Single A
+          currentX = end.x;
+          currentY = end.y;
+        }
+
+        flushPath(path, gState, svgOut, StrokeOnly);
+        path = path.reset();
         continue;
       }
 
@@ -986,6 +921,7 @@ function interpret(
       }
 
       if (op === "image" || op === "imagemask") {
+        // KEEP: Imagem como <image> (separate tag)
         svgOut.elementShapes.push(
           `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="${DEFAULT_IMAGE}" />`
         );
@@ -1026,6 +962,7 @@ function interpret(
       }
 
       if (op === "show") {
+        // KEEP: Texto como <text> (separate tag)
         const s = String(stack.pop() ?? "");
         const escaped = escapeXML(s);
         if (gState.lastTextPos) {
@@ -1035,7 +972,7 @@ function interpret(
           );
         }
         path = path.reset(); // Limpa path após show
-        gState.lastTextPos = null;
+        gState.lastTextPos = null; // Após show, limpe
         continue;
       }
       if (op === "showpage") {
@@ -1089,7 +1026,7 @@ function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elemen
   const allParts = path.parts;
   if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
     let subPath = new PathBuilder();
-    subPath = subPath.reset();
+    subPath.reset();
     for (const part of allParts) {
       if (part.startsWith("M ")) {
         if (subPath.length() > 0) {
