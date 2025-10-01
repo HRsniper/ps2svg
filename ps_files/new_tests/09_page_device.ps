@@ -1,0 +1,16 @@
+%!PS
+%%Title: 09_page_device.ps
+%%Pages: 1
+72 740 moveto (Page / Device tests) show
+
+% initgraphics should reset CTM to default user space
+100 680 translate
+20 20 scale
+0 0 moveto (scaled) show
+initgraphics
+72 600 moveto (after initgraphics) show
+
+% setpagedevice test (might be limited by interpreter)
+<< /PageSize [300 400] >> setpagedevice
+
+showpage

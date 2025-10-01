@@ -1,0 +1,47 @@
+%!PS-Adobe-3.0
+%%Title: 01_paths.ps
+%%Pages: 1
+%%BoundingBox: 0 0 612 792
+/newpage {
+  72 720 moveto
+  (Paths: stroking and filling) /Times-Roman findfont 14 scalefont setfont
+  show
+  100 600 moveto
+  200 600 lineto
+  200 500 lineto
+  100 500 lineto
+  closepath
+  2 setlinewidth
+  stroke
+
+  % cubic Bézier
+  300 600 moveto
+  400 600 350 500 450 500 curveto
+  stroke
+
+  % fill vs even-odd
+  100 400 moveto
+  220 520 lineto
+  340 400 lineto
+  220 280 lineto
+  closepath
+  0 setgray fill
+
+  % self-intersecting: winding vs even-odd
+  300 350 moveto
+  380 430 lineto
+  300 430 lineto
+  380 350 lineto
+  closepath
+  gsave  0.6 setgray fill grestore
+  300 250 moveto
+  380 330 lineto
+  300 330 lineto
+  380 250 lineto
+  closepath
+  gsave  evenodd {eofill} {fill} ifelse grestore
+
+  showpage
+} def
+
+newpage

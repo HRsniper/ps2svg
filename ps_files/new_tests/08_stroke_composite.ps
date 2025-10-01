@@ -1,0 +1,20 @@
+%!PS
+%%Title: 08_stroke_composite.ps
+72 740 moveto (Stroke/composite tests) show
+
+% linewidth, linecap, linejoin
+100 680 moveto 200 680 lineto 300 680 lineto
+2 setlinewidth
+1 setlinejoin % miter
+0 setlinecap
+stroke
+
+% dashed line
+[6 3] 0 setdash
+100 640 moveto 300 640 lineto stroke
+[] 0 setdash
+
+% transfer function (settransfer) simple gamma-ish
+{dup 0.8 mul} settransfer
+
+showpage

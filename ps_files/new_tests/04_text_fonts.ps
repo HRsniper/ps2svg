@@ -1,0 +1,27 @@
+%!PS
+%%Title: 04_text_fonts.ps
+/Times-Roman findfont 18 scalefont setfont
+72 740 moveto (Text & Font tests) show
+
+% basic show
+72 700 moveto (Hello, PostScript!) show
+
+% font transform
+gsave
+200 650 translate
+/Helvetica findfont 24 scalefont setfont
+0 0 moveto (Scaled Helvetica) show
+grestore
+
+% glyph positioning and kerning via show
+72 620 moveto
+/Times-Roman findfont 16 scalefont setfont
+(ABC) dup stringwidth pop 10 add
+show
+
+% Use a Type42 or embedded font is implementation-dependent; test fallback
+72 580 moveto
+/Helvetica-Bold findfont 14 scalefont setfont
+(Accented: café — 測試) show
+
+showpage

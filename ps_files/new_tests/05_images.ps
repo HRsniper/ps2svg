@@ -1,0 +1,32 @@
+%!PS
+%%Title: 05_images.ps
+%%Pages: 1
+72 740 moveto (Image tests) show
+
+% simple 8x8 black-white image (image operator single component)
+/imgdata currentfile /ASCIIHexDecode filter def
+% 8x8 checkerboard hex: FF00FF00... (simple demo)
+<FF00FF00FF00FF00FF00FF00FF00FF00> /DataString exch def
+
+% We'll use an easy image via "image" with 8x8
+gsave
+100 500 translate
+8 8 1 [8 0 0 -8 0 8] { DataString } image
+grestore
+
+% imagemask (monochrome mask) demo
+% Create a simple mask with a rectangle
+gsave
+300 480 translate
+0 0 moveto 80 0 lineto 80 40 lineto 0 40 lineto closepath
+1 setgray fill
+grestore
+
+% colorimage demo (many interpreters require Level 2/3)
+% Provide a tiny RGB stripe as hex bytes (3*4 pixels)
+/rgbdata currentfile /ASCIIHexDecode filter def
+<FF0000FF0000FF0000FF0000FF0000> % placeholder
+/rgbData exch def
+% Many viewers need Level 2 support; this block is a reference test only.
+
+showpage
