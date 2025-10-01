@@ -2,7 +2,7 @@ import * as child_process from "node:child_process";
 import * as path from "node:path";
 import * as process from "node:process";
 import * as fs from "node:fs";
-import { convertSvgToFile } from "./ps2svg_work.js";
+import { convertSvgToFile } from "./v3/ps2svg_v3.js";
 
 type CLI_RESULT = {
   fileInputName: string;
