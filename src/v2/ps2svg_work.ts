@@ -564,22 +564,43 @@ function safePopNumber(stack: any[], def = 0): number {
   return def;
 }
 
+const PATH_TERMINATORS = ["stroke", "fill", "show", "moveto", "newpath"];
+const PATH_CONTINUATORS = ["lineto", "curveto", "rlineto", "rcurveto"];
+const STATE_MODIFIERS = [
+  "setrgbcolor",
+  "setgray",
+  "setcmykcolor",
+  "setlinewidth",
+  "setlinecap",
+  "setlinejoin",
+  "setdash",
+  "translate",
+  "scale",
+  "rotate"
+];
+
 function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
-  // Verifica os próximos tokens para ver se é uma linha isolada
-  for (let j = startIdx; j < Math.min(startIdx + 3, tokens.length); j++) {
+  // Procura até encontrar stroke/fill/moveto ou fim do arquivo
+  for (let j = startIdx; j < tokens.length; j++) {
     const token = tokens[j];
+
+    // Ignora números e nomes (são argumentos)
+    if (token.type === "number" || token.type === "name") continue;
+
     if (token.type === "operator") {
       const value = token.value;
-      // Se for um operador que indica fim ou texto, é linha simples
-      if (["stroke", "show", "moveto"].includes(value)) return true;
+      // Se encontrar modificador de estado, NÃO é linha simples
+      if (STATE_MODIFIERS.includes(value)) return false;
+      // Se encontrar finalizador/início de novo path, É linha simples
+      if (PATH_TERMINATORS.includes(value)) return true;
       // Se for um operador vetorial, não é linha simples
-      if (["lineto", "curveto", "rlineto", "rcurveto"].includes(value)) return false;
+      if (PATH_CONTINUATORS.includes(value)) return false;
 
-      // Operador desconhecido: assume seguro
+      // Operador desconhecido: assume seguro (é simples)
       return true;
     }
   }
-  return true; // Near EOF: flush
+  return true; // EOF: flush seguro
 }
 
 // Função para executar um procedimento (insere tokens no fluxo atual)
