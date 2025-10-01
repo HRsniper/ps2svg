@@ -564,6 +564,7 @@ function safePopNumber(stack: any[], def = 0): number {
   return def;
 }
 
+// Constantes para detecção de linha simples
 const PATH_TERMINATORS = ["stroke", "fill", "show", "moveto", "newpath"];
 const PATH_CONTINUATORS = ["lineto", "curveto", "rlineto", "rcurveto"];
 const STATE_MODIFIERS = [
@@ -828,7 +829,10 @@ function interpret(
       }
 
       if (op === "closepath") {
-        path.close();
+        // Só adiciona Z se o último comando não for já um Z
+        if (path.length() > 0 && !path.parts[path.parts.length - 1]?.endsWith("Z")) {
+          path.close();
+        }
         continue;
       }
 
@@ -974,6 +978,13 @@ function interpret(
         const delta = Math.abs(ang2 - ang1);
         const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
 
+        // Se há um moveTo recente para o centro do arco, substitui pelo ponto inicial correto
+        const lastPart = path.parts[path.parts.length - 1];
+        if (lastPart && lastPart.startsWith("M ")) {
+          // Remove o moveTo anterior e adiciona o correto
+          path.parts.pop();
+        }
+
         path.moveTo(start.x, start.y);
 
         if (isFullCircle) {
@@ -994,8 +1005,6 @@ function interpret(
           currentY = end.y;
         }
 
-        flushPath(path, gState, svgOut, StrokeOnly);
-        path = path.reset();
         continue;
       }
 
