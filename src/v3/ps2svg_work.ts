@@ -1211,18 +1211,14 @@ function interpret(
             const fy = coords[1]; // y0
 
             svgOut.defs.push(
-              `<radialGradient id="${gradId}" cx="${numFmt(cx)}" cy="${numFmt(cy)}" r="${numFmt(r)}" fx="${numFmt(fx)}" fy="${numFmt(fy)}">
-           <stop offset="0" stop-color="${c0}" />
-           <stop offset="1" stop-color="${c1}" />
-         </radialGradient>`
+              `<defs>\n<radialGradient id="${gradId}">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</radialGradient>\n</defs>`
             );
 
-            if (path.length() > 0) {
-              const d = path.toPath();
-              svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
-              path = path.reset();
-            }
+            const d = `M ${numFmt(cx + r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx - r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx + r)} ${numFmt(cy)} Z`;
+            svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
           }
+
+          path = path.reset();
         } else {
           svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
         }
