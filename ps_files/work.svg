@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-
+<linearGradient id="grad0" x1="0" y1="0" x2="200" y2="0">
+            <stop offset="0" stop-color="rgb(255, 0, 0)" />
+            <stop offset="1" stop-color="rgb(0, 0, 255)" />
+          </linearGradient>
+<radialGradient id="grad1" cx="250" cy="40" r="30" fx="250" fy="40">
+           <stop offset="0" stop-color="rgb(255, 255, 0)" />
+           <stop offset="1" stop-color="rgb(0, 0, 0)" />
+         </radialGradient>
 <g transform="translate(0, 400) scale(1,-1)">
 <path d="M 50 50 L 150 150" fill="none" stroke="black"/>
 <path d="M 200 50 l 100 0 l 0 50 l -100 0 Z" fill="black" stroke="none"/>
@@ -16,8 +23,6 @@
 <g transform="translate(100 100) scale(2 1) rotate(45) skewY(56.31)"><path d="M 30 0 A 30 30 0 1 1 -30 0 A 30 30 0 1 1 30 0 Z" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-dasharray="4 2"/></g>
 <!-- image/imagemask not implemented -->
 <image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkltYWdlbTwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMjk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPk5vdDwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMzk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkZvdW5kPC90ZXh0Pgo8L3N2Zz4K" />
-<!-- shfill not fully implemented -->
-<!-- shfill not fully implemented -->
 <!-- Unhandled operator: makepattern -->
 <!-- Unhandled operator: setpattern -->
 <path d="M 300 200 A 50 50 0 1 1 200 200 A 50 50 0 1 1 300 200 Z" fill="rgb(242, 212, 209)" stroke="none"/>

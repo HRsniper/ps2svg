@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import { cmyk2rgb, color2rgb, gray2rgb } from "../color2rgb.js";
-// import { fileInputName, fileOutputName } from "./cli.js";
+import { fileInputName, fileOutputName } from "../cli.js";
 
 console.time("Execution time");
 
@@ -235,7 +235,10 @@ class PathBuilder {
   }
 }
 
-type Token = { type: "number" | "name" | "string" | "operator" | "brace" | "bracket"; value: string };
+type Token = {
+  type: "number" | "name" | "string" | "operator" | "brace" | "bracket" | "dict" | "hexstring";
+  value: string;
+};
 
 interface GraphicState {
   ctm: Matrix;
@@ -271,6 +274,8 @@ function tokenize(ps: string): Token[] {
   const nameRe = /\/?[A-Za-z_\-\.\?\*][A-Za-z0-9_\-\.\?\*]*/y; //  name /foo /foo-bar
   const braceRe = /[\{\}]/y;
   const bracketRe = /[\[\]]/y;
+  const dictRe = /<<|>>/y;
+  const hexStringRe = /<[0-9A-Fa-f\s]*>/y;
   const whitespaceRe = /\s*/y;
 
   const tokens: Token[] = [];
@@ -316,6 +321,31 @@ function tokenize(ps: string): Token[] {
     if (match) {
       tokens.push({ type: "bracket", value: match[0] });
       index = bracketRe.lastIndex;
+      continue;
+    }
+
+    // Dict markers: << >> (must check before hex strings!)
+    dictRe.lastIndex = index;
+    match = dictRe.exec(ps);
+    if (match) {
+      tokens.push({ type: "dict", value: match[0] });
+      index = dictRe.lastIndex;
+      continue;
+    }
+
+    // Hex strings: <...>
+    hexStringRe.lastIndex = index;
+    match = hexStringRe.exec(ps);
+    if (match) {
+      // Remove < > e converte hex para string
+      const hexContent = match[0].slice(1, -1).replace(/\s/g, "");
+      let str = "";
+      for (let i = 0; i < hexContent.length; i += 2) {
+        const byte = hexContent.substr(i, 2);
+        str += String.fromCharCode(parseInt(byte, 16));
+      }
+      tokens.push({ type: "hexstring", value: str });
+      index = hexStringRe.lastIndex;
       continue;
     }
 
@@ -442,6 +472,61 @@ function parseArray(tokens: Token[], startIndex: number): { array: (number | str
     index++;
   }
   return { array, nextIndex: index };
+}
+
+function parseDict(tokens: Token[], startIndex: number): { dict: PostscriptDict; nextIndex: number } {
+  const dict: PostscriptDict = {};
+  let index = startIndex;
+  let currentKey: string | null = null;
+
+  while (index < tokens.length) {
+    const token = tokens[index];
+
+    // Fim do dicionário
+    if (token.type === "dict" && token.value === ">>") {
+      return { dict, nextIndex: index + 1 };
+    }
+
+    // Nome (chave)
+    if (token.type === "name") {
+      currentKey = token.value;
+      index++;
+      continue;
+    }
+
+    // Valor após chave
+    if (currentKey !== null) {
+      if (token.type === "number") {
+        dict[currentKey] = Number(token.value);
+        currentKey = null;
+      } else if (token.type === "string" || token.type === "hexstring") {
+        dict[currentKey] = token.value;
+        currentKey = null;
+      } else if (token.type === "bracket" && token.value === "[") {
+        // Array como valor
+        const { array, nextIndex } = parseArray(tokens, index + 1);
+        dict[currentKey] = array;
+        index = nextIndex - 1;
+        currentKey = null;
+      } else if (token.type === "dict" && token.value === "<<") {
+        // Dicionário aninhado
+        const { dict: nestedDict, nextIndex } = parseDict(tokens, index + 1);
+        dict[currentKey] = nestedDict;
+        index = nextIndex - 1;
+        currentKey = null;
+      } else if (token.type === "brace" && token.value === "{") {
+        // Procedimento como valor
+        const { procedure, nextIndex } = parseProcedure(tokens, index + 1);
+        dict[currentKey] = { type: "procedure", body: procedure };
+        index = nextIndex - 1;
+        currentKey = null;
+      }
+    }
+
+    index++;
+  }
+
+  return { dict, nextIndex: index };
 }
 
 const DEFAULT_GRAPHIC_STATE: GraphicState = {
@@ -656,7 +741,7 @@ function interpret(
     const tokenValue = token.value;
 
     if (tokenType === "number") stack.push(Number(tokenValue));
-    else if (tokenType === "string" || tokenType === "name") stack.push(tokenValue);
+    else if (tokenType === "string" || tokenType === "hexstring" || tokenType === "name") stack.push(tokenValue);
     else if (tokenType === "brace" && tokenValue === "{") {
       const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
       stack.push({ type: "procedure", body: procedure });
@@ -664,6 +749,10 @@ function interpret(
     } else if (tokenType === "bracket" && tokenValue === "[") {
       const { array, nextIndex } = parseArray(tokens, i + 1);
       stack.push(array);
+      i = nextIndex - 1;
+    } else if (tokenType === "dict" && tokenValue === "<<") {
+      const { dict, nextIndex } = parseDict(tokens, i + 1);
+      stack.push(dict);
       i = nextIndex - 1;
     } else if (tokenType === "operator") {
       const op = tokenValue;
@@ -1107,6 +1196,32 @@ function interpret(
               svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" />`);
               path = path.reset();
             }
+          } else if (shading?.ShadingType === 3) {
+            // Gradiente radial: [x0 y0 r0 x1 y1 r1]
+            const coords = shading?.Coords;
+            const c0 = color2rgb(shading?.Function?.C0 || [1, 1, 0]).toString();
+            const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 0]).toString();
+            const gradId = `grad${clipIdCounter++}`;
+
+            // SVG radialGradient: cx, cy, r (círculo externo), fx, fy (foco)
+            const cx = coords[3]; // x1
+            const cy = coords[4]; // y1
+            const r = coords[5]; // r1
+            const fx = coords[0]; // x0
+            const fy = coords[1]; // y0
+
+            svgOut.defs.push(
+              `<radialGradient id="${gradId}" cx="${numFmt(cx)}" cy="${numFmt(cy)}" r="${numFmt(r)}" fx="${numFmt(fx)}" fy="${numFmt(fy)}">
+           <stop offset="0" stop-color="${c0}" />
+           <stop offset="1" stop-color="${c1}" />
+         </radialGradient>`
+            );
+
+            if (path.length() > 0) {
+              const d = path.toPath();
+              svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
+              path = path.reset();
+            }
           }
         } else {
           svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
@@ -1201,7 +1316,7 @@ function convertSvgToFile(inPath: string, outPath: string) {
   const svg = convertPostscriptToSVG(file);
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
 }
-// convertSvgToFile(fileInputName, fileOutputName);
+convertSvgToFile(fileInputName, fileOutputName);
 
 console.timeEnd("Execution time");
 
