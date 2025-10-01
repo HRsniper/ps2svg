@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import { cmyk2rgb, color2rgb, gray2rgb } from "../color2rgb.js";
-import { fileInputName, fileOutputName } from "./cli.js";
+// import { fileInputName, fileOutputName } from "./cli.js";
 
 console.time("Execution time");
 
@@ -1075,7 +1075,7 @@ function interpret(
         if (gState.lastTextPos) {
           const p = gState.ctm.applyPoint(gState.lastTextPos.x, gState.lastTextPos.y);
           svgOut.elementShapes.push(
-            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}">${escaped}</text>`
+            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
           );
         }
         path = path.reset();
@@ -1201,7 +1201,7 @@ function convertSvgToFile(inPath: string, outPath: string) {
   const svg = convertPostscriptToSVG(file);
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
 }
-convertSvgToFile(fileInputName, fileOutputName);
+// convertSvgToFile(fileInputName, fileOutputName);
 
 console.timeEnd("Execution time");
 
