@@ -24,7 +24,8 @@
     "eslint": "npx eslint ./src --fix",
     "prepublishOnly": "npm run prestart",
     "v1": "npm run build && node ./dist/v1/ps2svg_v1.js",
-    "v2": "npm run build && node ./dist/v2/cli.js"
+    "v2": "npm run build && node ./dist/v2/cli.js",
+    "t": "npm run build && node ./dist/ps2svg.js ps_files/example_full v2 && node ./dist/v2/ps2svg_work.js ps_files/example_full work"
   },
   "engines": {
     "node": ">=24.8.0"
