@@ -492,7 +492,7 @@ function isIdentityMatrix(m: Matrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, addDash = false): string {
+function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
   // Use Matrix.decompose pra transform legível
@@ -512,31 +512,41 @@ function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: 
 
   const fillColor = mode.fill ? (g.fill ?? "black") : "none";
   const strokeColor = mode.stroke ? (g.stroke ?? "black") : "none";
-  const strokeAttr = mode.stroke ? strokeColor : "none";
 
-  const strokeWidthAttr = g.strokeWidth ? `stroke-width="${g.strokeWidth}"` : "";
-  const strokeLineCapAttr = g.lineCap ? `stroke-linecap="${g.lineCap}"` : "";
-  const strokeLineJoinAttr = g.lineJoin ? `stroke-linejoin="${g.lineJoin}"` : "";
-  const dashAttr = addDash && g.dash ? `stroke-dasharray="${g.dash}"` : "";
+  const pathAttrs = [`d="${d}"`];
 
-  const pathAttrs = [
-    `d="${d}"`,
-    `fill="${fillColor}"`,
-    `stroke="${strokeAttr}"`,
-    strokeWidthAttr,
-    strokeLineCapAttr,
-    strokeLineJoinAttr,
-    dashAttr
-  ]
-    .filter(Boolean)
-    .join(" ");
+  // Fill sempre explícito
+  pathAttrs.push(`fill="${fillColor}"`);
 
+  // Stroke: só adiciona atributos se stroke tem cor (não é "none")
+  if (mode.stroke && strokeColor !== "none") {
+    pathAttrs.push(`stroke="${strokeColor}"`);
+
+    // Atributos de stroke apenas quando há stroke ativo
+    if (g.strokeWidth && g.strokeWidth !== 1) {
+      pathAttrs.push(`stroke-width="${g.strokeWidth}"`);
+    }
+    if (g.lineCap && g.lineCap !== "butt") {
+      pathAttrs.push(`stroke-linecap="${g.lineCap}"`);
+    }
+    if (g.lineJoin && g.lineJoin !== "miter") {
+      pathAttrs.push(`stroke-linejoin="${g.lineJoin}"`);
+    }
+    if (g.dash) {
+      pathAttrs.push(`stroke-dasharray="${g.dash}"`);
+    }
+  } else if (mode.fill && fillColor !== "none") {
+    // Se fill tem cor, stroke é explicitamente none
+    pathAttrs.push(`stroke="none"`);
+  }
+
+  const pathAttrsStr = pathAttrs.join(" ");
   const clipId = g.clipStack.length > 0 ? ` clip-path="url(#clip${g.clipStack.length - 1})"` : "";
 
   if (needGroup) {
-    return `<g transform="${transformStr}"${clipId}><path ${pathAttrs}/></g>`;
+    return `<g transform="${transformStr}"${clipId}><path ${pathAttrsStr}/></g>`;
   } else {
-    return `<path ${pathAttrs}${clipId}/>`;
+    return `<path ${pathAttrsStr}${clipId}/>`;
   }
 }
 
@@ -618,7 +628,7 @@ function flushPath(
 ) {
   if (path.length() === 0) return;
   const d = path.toPath();
-  const pathStr = emitSVGPath(d, g, mode, true);
+  const pathStr = emitSVGPath(d, g, mode);
   svgOut.elementShapes.push(pathStr);
   path = path.reset();
 }
