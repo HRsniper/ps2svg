@@ -1,0 +1,18 @@
+%!PS
+%%Title: 11_level2_level3.ps
+72 740 moveto (Level2/3 features) show
+
+% colorimage minimal invocation (Level 2)
+% 2x1 pixels RGB, 3 components, 8 bits each (example stub)
+% many interpreters require binary or filters; this is a structure test.
+
+/mycolorimage {
+  % wrapper to attempt colorimage
+  2 1 8 [% width height bits matrix ] {currentfile 6 readhexstring pop} false 3 colorimage
+} def
+
+% shading (shfill) stub for axial shading (Level2)
+% << /ShadingType 2 ... >> /MyShading exch def
+% MyShading shfill
+
+showpage

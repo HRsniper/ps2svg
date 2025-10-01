@@ -1,0 +1,25 @@
+%!PS
+%%Title: 06_color_shading.ps
+%%Pages: 1
+72 740 moveto (Color & Shading tests) show
+
+% RGB rectangle
+gsave
+72 680 translate
+0 0 200 100 rectclip
+0 1 0 setrgbcolor
+newpath 0 0 moveto 200 0 lineto 200 100 lineto 0 100 lineto closepath fill
+grestore
+
+% CMYK test (if interpreter supports setcmykcolor)
+gsave
+72 560 translate
+/DeviceCMYK setcolorspace % may fail on non-Level2 interpreters
+0 0 1 0 setcmykcolor
+0 0 120 60 rectfill
+grestore
+
+% Shading (Level 2/3) example (axial)
+% Minimal axial shading uses shfill operator (Level 2/3)
+% This is a test stub—many interpreters support shfill as extension.
+showpage

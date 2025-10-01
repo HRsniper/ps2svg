@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+
+<g transform="translate(0, 400) scale(1,-1)">
+<path d="M 50 50 L 150 150" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 200 50 l 100 0 l 0 50 l -100 0 Z" fill="black" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
+<circle cx="90" cy="150" r="40" fill="black" stroke="black" stroke-width="1"/>
+<path d="M 330 200 A 30 10 0 0 1 270 200" fill="none" stroke="black" stroke-width="1"/>
+<path d="M 270 200 A 30 10 0 0 1 330 200" fill="none" stroke="black" stroke-width="1"/>
+<path d="M 50 250 L 100 300 L 150 250 Z" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 50 350 C 100 380 150 320 200 350" fill="none" stroke="black" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter"/>
+<text transform="scale(1,-1)" x="100" y="-370" font-family="Times-Roman" font-size="18" fill="black">Olá Mundo</text>
+<circle cx="250" cy="300" r="30" fill="rgb(51, 153, 204)" stroke="rgb(51, 153, 204)" stroke-width="1"/>
+<circle cx="350" cy="300" r="20" fill="rgb(128, 128, 128)" stroke="rgb(128, 128, 128)" stroke-width="1"/>
+<circle cx="300" cy="350" r="20" fill="rgb(255, 128, 128)" stroke="rgb(255, 128, 128)" stroke-width="1"/>
+<path d="M 250 50 L 350 150" fill="none" stroke="rgb(255, 128, 128)" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 142.426 142.426 A 60 30 0 0 1 57.574 57.574" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5"/>
+<path d="M 57.574 57.574 A 60 30 0 0 1 142.426 142.426" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5"/>
+<!-- image/imagemask not implemented -->
+<image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkltYWdlbTwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMjk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPk5vdDwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMzk4IiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMjgiPkZvdW5kPC90ZXh0Pgo8L3N2Zz4K" />
+<!-- shfill not fully implemented -->
+<!-- shfill not fully implemented -->
+<!-- Unhandled operator: makepattern -->
+<!-- Unhandled operator: setpattern -->
+<circle cx="250" cy="200" r="50" fill="rgb(242, 212, 209)" stroke="rgb(242, 212, 209)" stroke-width="5"/>
+<path d="M 250 200 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+<path d="M 59.784 66.176 l 0 16.088 l 76.525 0 l 0 -16.088 l -76.525 0 Z" fill="rgb(242, 212, 209)" stroke="none" stroke-width="5" stroke-linecap="butt" stroke-linejoin="miter"/>
+</g>
+
+</svg>

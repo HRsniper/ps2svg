@@ -104,70 +104,112 @@ class Matrix {
 
 class PathBuilder {
   parts: string[] = [];
+  private useLocalCoords = false;
+  private ctm: Matrix | undefined = undefined;
+
+  setTransformMode(useLocal: boolean, transform?: Matrix) {
+    this.useLocalCoords = useLocal;
+    this.ctm = transform;
+  }
+
+  private transformPoint(x: number, y: number): { x: number; y: number } {
+    if (!this.useLocalCoords && this.ctm) {
+      return this.ctm.applyPoint(x, y);
+    }
+    return { x, y };
+  }
+
   moveTo(x: number, y: number) {
-    this.parts.push(`M ${numFmt(x)} ${numFmt(y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`M ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   moveToRel(dx: number, dy: number) {
-    this.parts.push(`m ${numFmt(dx)} ${numFmt(dy)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`m ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   lineTo(x: number, y: number) {
-    this.parts.push(`L ${numFmt(x)} ${numFmt(y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`L ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   lineToRel(dx: number, dy: number) {
-    this.parts.push(`l ${numFmt(dx)} ${numFmt(dy)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`l ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   horizontalLineTo(x: number) {
-    this.parts.push(`H ${numFmt(x)}`);
+    const p = this.transformPoint(x, 0);
+    this.parts.push(`H ${numFmt(p.x)}`);
   }
   horizontalLineToRel(dx: number) {
-    this.parts.push(`h ${numFmt(dx)}`);
+    const p = this.transformPoint(dx, 0);
+    this.parts.push(`h ${numFmt(p.x)}`);
   }
 
   verticalLineTo(y: number) {
-    this.parts.push(`V ${numFmt(y)}`);
+    const p = this.transformPoint(0, y);
+    this.parts.push(`V ${numFmt(p.y)}`);
   }
   verticalLineToRel(dy: number) {
-    this.parts.push(`v ${numFmt(dy)}`);
+    const p = this.transformPoint(0, dy);
+    this.parts.push(`v ${numFmt(p.y)}`);
   }
 
   curveTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number) {
-    this.parts.push(`C ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
+    const p1 = this.transformPoint(x1, y1);
+    const p2 = this.transformPoint(x2, y2);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`C ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   curveToRel(dx1: number, dy1: number, dx2: number, dy2: number, dx: number, dy: number) {
-    this.parts.push(`c ${numFmt(dx1)} ${numFmt(dy1)} ${numFmt(dx2)} ${numFmt(dy2)} ${numFmt(dx)} ${numFmt(dy)}`);
+    const p1 = this.transformPoint(dx1, dy1);
+    const p2 = this.transformPoint(dx2, dy2);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`c ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   smoothCurveTo(x2: number, y2: number, x: number, y: number) {
-    this.parts.push(`S ${numFmt(x2)} ${numFmt(y2)} ${numFmt(x)} ${numFmt(y)}`);
+    const p2 = this.transformPoint(x2, y2);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`S ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   smoothCurveToRel(dx2: number, dy2: number, dx: number, dy: number) {
-    this.parts.push(`s ${numFmt(dx2)} ${numFmt(dy2)} ${numFmt(dx)} ${numFmt(dy)}`);
+    const p2 = this.transformPoint(dx2, dy2);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`s ${numFmt(p2.x)} ${numFmt(p2.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   quadraticCurveTo(x1: number, y1: number, x: number, y: number) {
-    this.parts.push(`Q ${numFmt(x1)} ${numFmt(y1)} ${numFmt(x)} ${numFmt(y)}`);
+    const p1 = this.transformPoint(x1, y1);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`Q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   quadraticCurveToRel(dx1: number, dy1: number, dx: number, dy: number) {
-    this.parts.push(`q ${numFmt(dx1)} ${numFmt(dy1)} ${numFmt(dx)} ${numFmt(dy)}`);
+    const p1 = this.transformPoint(dx1, dy1);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`q ${numFmt(p1.x)} ${numFmt(p1.y)} ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   smoothQuadraticCurveTo(x: number, y: number) {
-    this.parts.push(`T ${numFmt(x)} ${numFmt(y)}`);
+    const p = this.transformPoint(x, y);
+    this.parts.push(`T ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
   smoothQuadraticCurveToRel(dx: number, dy: number) {
-    this.parts.push(`t ${numFmt(dx)} ${numFmt(dy)}`);
+    const p = this.transformPoint(dx, dy);
+    this.parts.push(`t ${numFmt(p.x)} ${numFmt(p.y)}`);
   }
 
   ellipseTo(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, x: number, y: number) {
+    // Para arcos, rx/ry/rotation não são transformados como pontos
+    const p = this.transformPoint(x, y);
     this.parts.push(
-      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(x)} ${numFmt(y)}`
+      `A ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(p.x)} ${numFmt(p.y)}`
     );
   }
   ellipseToRel(rx: number, ry: number, rotation: number, largeArc: number, sweep: number, dx: number, dy: number) {
+    const p = this.transformPoint(dx, dy);
     this.parts.push(
-      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(dx)} ${numFmt(dy)}`
+      `a ${numFmt(rx)} ${numFmt(ry)} ${numFmt(rotation)} ${numFmt(largeArc)} ${numFmt(sweep)} ${numFmt(p.x)} ${numFmt(p.y)}`
     );
   }
 
@@ -175,7 +217,6 @@ class PathBuilder {
     this.parts.push("Z");
   }
 
-  // Utilitários
   toPath(): string {
     return this.parts.join(" ");
   }
@@ -185,12 +226,16 @@ class PathBuilder {
   clear() {
     this.parts = [];
   }
+
   reset(): PathBuilder {
-    return new PathBuilder();
+    const newPath = new PathBuilder();
+    // Propaga o modo de transformação
+    newPath.setTransformMode(this.useLocalCoords, this.ctm);
+    return newPath;
   }
 }
 
-type Token = { type: "number" | "name" | "string" | "operator" | "brace"; value: string };
+type Token = { type: "number" | "name" | "string" | "operator" | "brace" | "bracket"; value: string };
 
 interface GraphicState {
   ctm: Matrix;
@@ -225,6 +270,7 @@ function tokenize(ps: string): Token[] {
   const stringRe = /\((?:\\.|[^\\\)])*\)/y; // (foo) (a\)b)
   const nameRe = /\/?[A-Za-z_\-\.\?\*][A-Za-z0-9_\-\.\?\*]*/y; //  name /foo /foo-bar
   const braceRe = /[\{\}]/y;
+  const bracketRe = /[\[\]]/y;
   const whitespaceRe = /\s*/y;
 
   const tokens: Token[] = [];
@@ -240,12 +286,6 @@ function tokenize(ps: string): Token[] {
     stringRe.lastIndex = index;
     let match = stringRe.exec(ps);
     if (match) {
-      // const raw = match[0].slice(1, -1).replace(/\\([()\\nrt])/g, (s, g) => {
-      //   if (g === "n") return "\n";
-      //   if (g === "r") return "\r";
-      //   if (g === "t") return "\t";
-      //   return g;
-      // });
       const raw = unescapePostscriptString(match[0].slice(1, -1));
       tokens.push({ type: "string", value: raw });
       index = stringRe.lastIndex;
@@ -270,6 +310,15 @@ function tokenize(ps: string): Token[] {
       continue;
     }
 
+    // Brackets (arrays)
+    bracketRe.lastIndex = index;
+    match = bracketRe.exec(ps);
+    if (match) {
+      tokens.push({ type: "bracket", value: match[0] });
+      index = bracketRe.lastIndex;
+      continue;
+    }
+
     // Names/Operators
     nameRe.lastIndex = index;
     match = nameRe.exec(ps);
@@ -287,7 +336,6 @@ function tokenize(ps: string): Token[] {
   return tokens;
 }
 
-// PS string unescaping: Char-by-char loop for precise handling (per PLRM)
 function unescapePostscriptString(str: string): string {
   let result = "";
   let index = 0;
@@ -298,10 +346,10 @@ function unescapePostscriptString(str: string): string {
       index++;
       continue;
     }
-    // Escape sequence: \ followed by...
+
     index++; // Skip the \
     if (index >= str.length) {
-      result += "\\"; // Trailing \ -> literal \
+      result += "\\";
       break;
     }
     const nextChar = str[index];
@@ -332,7 +380,7 @@ function unescapePostscriptString(str: string): string {
         break;
       case " ":
         result += " ";
-        break; // Escaped space
+        break;
       default:
         // Octal: \ddd (1-3 digits 0-7)
         if (nextChar >= "0" && nextChar <= "7") {
@@ -348,9 +396,8 @@ function unescapePostscriptString(str: string): string {
           }
           const code = parseInt(octal, 8);
           result += String.fromCharCode(code > 255 ? 255 : code);
-          index--; // Adjust for loop increment
+          index--;
         } else {
-          // Literal next char (non-special, e.g., \n where n is literal 'n' after escaped \)
           result += nextChar;
         }
         break;
@@ -376,6 +423,25 @@ function parseProcedure(tokens: Token[], startIndex: number): { procedure: Token
     index++;
   }
   return { procedure, nextIndex: index };
+}
+
+function parseArray(tokens: Token[], startIndex: number): { array: (number | string)[]; nextIndex: number } {
+  const array: (number | string)[] = [];
+  let index = startIndex;
+
+  while (index < tokens.length) {
+    const token = tokens[index];
+    if (token.type === "bracket" && token.value === "]") {
+      return { array, nextIndex: index + 1 };
+    }
+    if (token.type === "number") {
+      array.push(Number(token.value));
+    } else if (token.type === "string" || token.type === "name") {
+      array.push(token.value);
+    }
+    index++;
+  }
+  return { array, nextIndex: index };
 }
 
 const DEFAULT_GRAPHIC_STATE: GraphicState = {
@@ -426,97 +492,61 @@ function isIdentityMatrix(m: Matrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, addDash = false): string {
+function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
+
+  // Use Matrix.decompose pra transform legível
+  const decomp = g.ctm.decompose();
+  let transformStr = "";
+  if (!isIdentityMatrix(g.ctm)) {
+    const parts = [];
+    if (Math.abs(decomp.translate.x) > 1e-6 || Math.abs(decomp.translate.y) > 1e-6)
+      parts.push(`translate(${numFmt(decomp.translate.x)} ${numFmt(decomp.translate.y)})`);
+    if (Math.abs(decomp.scale.x - 1) > 1e-6 || Math.abs(decomp.scale.y - 1) > 1e-6)
+      parts.push(`scale(${numFmt(decomp.scale.x)} ${numFmt(decomp.scale.y)})`);
+    if (Math.abs(decomp.rotate) > 1e-6) parts.push(`rotate(${numFmt(decomp.rotate)})`);
+    if (Math.abs(decomp.skew.x) > 1e-6) parts.push(`skewX(${numFmt(decomp.skew.x)})`);
+    if (Math.abs(decomp.skew.y) > 1e-6) parts.push(`skewY(${numFmt(decomp.skew.y)})`);
+    transformStr = parts.join(" ");
+  }
 
   const fillColor = mode.fill ? (g.fill ?? "black") : "none";
   const strokeColor = mode.stroke ? (g.stroke ?? "black") : "none";
-  const strokeAttr = mode.stroke ? strokeColor : "none";
 
-  const strokeWidthAttr = g.strokeWidth ? `stroke-width="${g.strokeWidth}"` : "";
-  const strokeLineCapAttr = g.lineCap ? `stroke-linecap="${g.lineCap}"` : "";
-  const strokeLineJoinAttr = g.lineJoin ? `stroke-linejoin="${g.lineJoin}"` : "";
-  const dashAttr = addDash && g.dash ? `stroke-dasharray="${g.dash}"` : "";
+  const pathAttrs = [`d="${d}"`];
 
-  const pathAttrs = [
-    `d="${d}"`,
-    `fill="${fillColor}"`,
-    `stroke="${strokeAttr}"`,
-    strokeWidthAttr,
-    strokeLineCapAttr,
-    strokeLineJoinAttr,
-    dashAttr
-  ]
-    .filter(Boolean)
-    .join(" ");
+  // Fill sempre explícito
+  pathAttrs.push(`fill="${fillColor}"`);
 
+  // Stroke: só adiciona atributos se stroke tem cor (não é "none")
+  if (mode.stroke && strokeColor !== "none") {
+    pathAttrs.push(`stroke="${strokeColor}"`);
+
+    // Atributos de stroke apenas quando há stroke ativo
+    if (g.strokeWidth && g.strokeWidth !== 1) {
+      pathAttrs.push(`stroke-width="${g.strokeWidth}"`);
+    }
+    if (g.lineCap && g.lineCap !== "butt") {
+      pathAttrs.push(`stroke-linecap="${g.lineCap}"`);
+    }
+    if (g.lineJoin && g.lineJoin !== "miter") {
+      pathAttrs.push(`stroke-linejoin="${g.lineJoin}"`);
+    }
+    if (g.dash) {
+      pathAttrs.push(`stroke-dasharray="${g.dash}"`);
+    }
+  } else if (mode.fill && fillColor !== "none") {
+    // Se fill tem cor, stroke é explicitamente none
+    pathAttrs.push(`stroke="none"`);
+  }
+
+  const pathAttrsStr = pathAttrs.join(" ");
   const clipId = g.clipStack.length > 0 ? ` clip-path="url(#clip${g.clipStack.length - 1})"` : "";
 
   if (needGroup) {
-    const m = g.ctm;
-    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
-    return `<g transform="${transform}"${clipId}><path ${pathAttrs}/></g>`;
+    return `<g transform="${transformStr}"${clipId}><path ${pathAttrsStr}/></g>`;
   } else {
-    return `<path ${pathAttrs}${clipId}/>`;
-  }
-}
-
-// Verifica se o path representa um retângulo simples (moveto + 4 rlineto + closepath)
-function isRectanglePath(path: PathBuilder): boolean {
-  const parts = path.parts;
-  if (parts.length < 5) return false; // M + 4L + Z
-  if (!parts[0].startsWith("M ")) return false;
-  if (!parts[parts.length - 1].endsWith("Z")) return false;
-  const lines = parts.slice(1, -1);
-  if (lines.length !== 4) return false;
-  return lines.every((p) => p.startsWith("L "));
-}
-
-function extractRectangle(
-  path: PathBuilder,
-  gState: GraphicState
-): { rect: string; minX: number; minY: number; width: number; height: number } | null {
-  if (!isRectanglePath(path)) return null;
-
-  try {
-    const parts = path.parts;
-    const mMatch = parts[0].match(/M\s+([-.\d]+)\s+([-.\d]+)/);
-    const lMatches = parts.slice(1, -1).map((p) => p.match(/L\s+([-.\d]+)\s+([-.\d]+)/));
-
-    if (!mMatch || lMatches.some((m) => !m)) return null;
-
-    const [x1, y1] = mMatch.slice(1).map(Number);
-    const coords = lMatches.map((m) => m!.slice(1).map(Number));
-
-    const [x2, y2] = coords[0];
-    const [x3, y3] = coords[1];
-    const [x4, y4] = coords[2];
-    const [x5, y5] = coords[3];
-
-    // Verificações geométricas
-    if (Math.abs(x5 - x1) > 1e-6 || Math.abs(y5 - y1) > 1e-6) return null;
-    if (Math.abs(x2 - x1) > 1e-6 && Math.abs(y2 - y1) > 1e-6) return null;
-    if (Math.abs(x3 - x2) < 1e-6 || Math.abs(y3 - y2) < 1e-6) return null;
-
-    const xs = [x1, x2, x3, x4, x5];
-    const ys = [y1, y2, y3, y4, y5];
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
-    const width = Math.max(...xs) - minX;
-    const height = Math.max(...ys) - minY;
-
-    const fillColor = gState.fill ?? "black";
-    const rectAttrs = `x="${numFmt(minX)}" y="${numFmt(minY)}" width="${numFmt(width)}" height="${numFmt(height)}" fill="${fillColor}"`;
-
-    const m = gState.ctm;
-    const needTransform = !isIdentityMatrix(gState.ctm);
-    const transform = `matrix(${numFmt(m.a)} ${numFmt(m.b)} ${numFmt(m.c)} ${numFmt(m.d)} ${numFmt(m.e)} ${numFmt(m.f)})`;
-
-    const rect = needTransform ? `<g transform="${transform}"><rect ${rectAttrs}/></g>` : `<rect ${rectAttrs}/>`;
-
-    return { rect, minX, minY, width, height };
-  } catch {
-    return null;
+    return `<path ${pathAttrsStr}${clipId}/>`;
   }
 }
 
@@ -527,7 +557,6 @@ function escapeXML(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-  // .replace(/\\/g, ""); // Remove backslashes for PostScript escape sequences
 }
 
 function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
@@ -545,23 +574,44 @@ function safePopNumber(stack: any[], def = 0): number {
   return def;
 }
 
-// Helper for simple line flush
+// Constantes para detecção de linha simples
+const PATH_TERMINATORS = ["stroke", "fill", "show", "moveto", "newpath"];
+const PATH_CONTINUATORS = ["lineto", "curveto", "rlineto", "rcurveto"];
+const STATE_MODIFIERS = [
+  "setrgbcolor",
+  "setgray",
+  "setcmykcolor",
+  "setlinewidth",
+  "setlinecap",
+  "setlinejoin",
+  "setdash",
+  "translate",
+  "scale",
+  "rotate"
+];
+
 function isSimpleLineAhead(tokens: Token[], startIdx: number): boolean {
-  // Verifica os próximos tokens para ver se é uma linha isolada
-  for (let j = startIdx; j < Math.min(startIdx + 3, tokens.length); j++) {
+  // Procura até encontrar stroke/fill/moveto ou fim do arquivo
+  for (let j = startIdx; j < tokens.length; j++) {
     const token = tokens[j];
+
+    // Ignora números e nomes (são argumentos)
+    if (token.type === "number" || token.type === "name") continue;
+
     if (token.type === "operator") {
       const value = token.value;
-      // Se for um operador que indica fim ou texto, é linha simples
-      if (["stroke", "show", "moveto"].includes(value)) return true;
+      // Se encontrar modificador de estado, NÃO é linha simples
+      if (STATE_MODIFIERS.includes(value)) return false;
+      // Se encontrar finalizador/início de novo path, É linha simples
+      if (PATH_TERMINATORS.includes(value)) return true;
       // Se for um operador vetorial, não é linha simples
-      if (["lineto", "curveto", "rlineto", "rcurveto"].includes(value)) return false;
+      if (PATH_CONTINUATORS.includes(value)) return false;
 
-      // Operador desconhecido: assume seguro
+      // Operador desconhecido: assume seguro (é simples)
       return true;
     }
   }
-  return true; // Near EOF: flush
+  return true; // EOF: flush seguro
 }
 
 // Função para executar um procedimento (insere tokens no fluxo atual)
@@ -583,75 +633,6 @@ function flushPath(
   path = path.reset();
 }
 
-function handleArc(
-  stack: (number | string | any)[],
-  gState: GraphicState,
-  svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] }
-) {
-  const ang2 = safePopNumber(stack, 0);
-  const ang1 = safePopNumber(stack, 0);
-  const r = safePopNumber(stack, 0);
-  const y = safePopNumber(stack, 0);
-  const x = safePopNumber(stack, 0);
-
-  const start = anglePoint(x, y, r, ang1);
-  const end = anglePoint(x, y, r, ang2);
-
-  const { a, b, c, d, e, f } = gState.ctm;
-
-  const scaleX = Math.hypot(a, b) || 1;
-  const scaleY = Math.hypot(c, d) || 1;
-
-  const rx = Math.abs(r * scaleX);
-  const ry = Math.abs(r * scaleY);
-
-  const pStart = gState.ctm.applyPoint(start.x, start.y);
-  const pEnd = gState.ctm.applyPoint(end.x, end.y);
-
-  const delta = (((ang2 - ang1) % 360) + 360) % 360;
-
-  const isFullCircle = Math.abs(delta) < 1e-6;
-  const isUniformTransform = Math.abs(a - d) < 1e-6 && Math.abs(b + c) < 1e-6;
-  const isArcClosed = Math.abs(pStart.x - pEnd.x) < 1e-6 && Math.abs(pStart.y - pEnd.y) < 1e-6;
-
-  if (isFullCircle) {
-    const cP = gState.ctm.applyPoint(x, y);
-    const avgR = (rx + ry) / 2;
-    if (isUniformTransform) {
-      svgOut.elementShapes.push(
-        `<circle cx="${numFmt(cP.x)}" cy="${numFmt(cP.y)}" r="${numFmt(avgR)}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
-      );
-    } else {
-      const midAng = ang1 + 180;
-      const mid = anglePoint(x, y, r, midAng);
-      const pMid = gState.ctm.applyPoint(mid.x, mid.y);
-
-      const d1 = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pMid.y)}`;
-      const d2 = `M ${numFmt(pMid.x)} ${numFmt(pMid.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-      svgOut.elementShapes.push(
-        `<path d="${d1}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
-      );
-      svgOut.elementShapes.push(
-        `<path d="${d2}" fill="none" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"/>`
-      );
-      // const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pMid.x)} ${numFmt(pEnd.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 0 1 ${numFmt(pStart.x)} ${numFmt(pStart.y)}`;
-      // svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
-    }
-  } else {
-    const largeArc = delta > 180 ? 1 : 0;
-    const sweep = delta > 0 ? 1 : 0;
-
-    if (!isArcClosed) {
-      const dd = `M ${numFmt(pStart.x)} ${numFmt(pStart.y)} A ${numFmt(rx)} ${numFmt(ry)} 0 ${largeArc} ${sweep} ${numFmt(pEnd.x)} ${numFmt(pEnd.y)}`;
-      const dashAttr = gState.dash ? ` stroke-dasharray="${gState.dash}"` : "";
-      // svgOut.elementShapes.push(
-      //   `<path d="${dd}" fill="${gState.fill ?? "black"}" stroke="${gState.stroke ?? "black"}" stroke-width="${gState.strokeWidth}"${dashAttr}/>`
-      // );
-      svgOut.elementShapes.push(emitSVGPath(dd, gState, StrokeOnly));
-    }
-  }
-}
-
 function interpret(
   tokens: Token[],
   svgOut: { defs: string[]; elementShapes: string[]; elementTexts: string[] },
@@ -665,6 +646,10 @@ function interpret(
   let currentY = 0;
   let clipIdCounter = 0;
 
+  // Inicializa path com modo correto
+  const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+  path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
+
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     const tokenType = token.type;
@@ -676,14 +661,17 @@ function interpret(
       const { procedure, nextIndex } = parseProcedure(tokens, i + 1);
       stack.push({ type: "procedure", body: procedure });
       i = nextIndex - 1;
+    } else if (tokenType === "bracket" && tokenValue === "[") {
+      const { array, nextIndex } = parseArray(tokens, i + 1);
+      stack.push(array);
+      i = nextIndex - 1;
     } else if (tokenType === "operator") {
       const op = tokenValue;
 
-      // Verifica se é um procedimento definido pelo usuário
       const dictVal = lookupName(op);
       if (dictVal !== undefined) {
         if (dictVal && typeof dictVal === "object" && dictVal.type === "procedure") {
-          executeProcedure(tokens, dictVal.body, i);
+          executeProcedure(tokens, dictVal.body as Token[], i);
           continue;
         } else {
           stack.push(dictVal);
@@ -777,8 +765,7 @@ function interpret(
       if (op === "moveto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(x, y);
-        path.moveTo(pos.x, pos.y);
+        path.moveTo(x, y);
         currentX = x;
         currentY = y;
         gState.lastTextPos = { x, y };
@@ -788,8 +775,7 @@ function interpret(
       if (op === "rmoveto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(dx, dy);
-        path.moveToRel(pos.x, pos.y);
+        path.moveToRel(dx, dy);
         currentX += dx;
         currentY += dy;
         gState.lastTextPos = { x: currentX, y: currentY };
@@ -799,21 +785,20 @@ function interpret(
       if (op === "lineto") {
         const y = safePopNumber(stack, 0);
         const x = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(x, y);
-        path.lineTo(pos.x, pos.y);
+        path.lineTo(x, y);
         currentX = x;
         currentY = y;
 
         // Verifica se é uma linha simples (moveto + lineto seguido de moveto ou texto)
-        // if (
-        //   path.parts.length === 2 &&
-        //   path.parts[0].startsWith("M ") &&
-        //   path.parts[1].startsWith("L ") &&
-        //   isSimpleLineAhead(tokens, i + 1)
-        // ) {
-        if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
+        if (
+          path.parts.length === 2 &&
+          path.parts[0].startsWith("M ") &&
+          path.parts[1].startsWith("L ") &&
+          isSimpleLineAhead(tokens, i + 1)
+        ) {
+          // if (path.parts.length === 2 && isSimpleLineAhead(tokens, i + 1)) {
           flushPath(path, gState, svgOut, StrokeOnly);
-          path = path.reset(); // Reset imediato para próximo moveto
+          path = path.reset();
         }
         continue;
       }
@@ -821,8 +806,7 @@ function interpret(
       if (op === "rlineto") {
         const dy = safePopNumber(stack, 0);
         const dx = safePopNumber(stack, 0);
-        const pos = gState.ctm.applyPoint(dx, dy);
-        path.lineToRel(pos.x, pos.y);
+        path.lineToRel(dx, dy);
         currentX += dx;
         currentY += dy;
         continue;
@@ -835,10 +819,7 @@ function interpret(
         const x2 = safePopNumber(stack, 0);
         const y1 = safePopNumber(stack, 0);
         const x1 = safePopNumber(stack, 0);
-        const pos1 = gState.ctm.applyPoint(x1, y1);
-        const pos2 = gState.ctm.applyPoint(x2, y2);
-        const pos3 = gState.ctm.applyPoint(x, y);
-        path.curveTo(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        path.curveTo(x1, y1, x2, y2, x, y);
         currentX = x;
         currentY = y;
         continue;
@@ -851,23 +832,17 @@ function interpret(
         const dx2 = safePopNumber(stack, 0);
         const dy1 = safePopNumber(stack, 0);
         const dx1 = safePopNumber(stack, 0);
-        const x1 = currentX + dx1;
-        const y1 = currentY + dy1;
-        const x2 = currentX + dx2;
-        const y2 = currentY + dy2;
-        const x = currentX;
-        const y = currentY;
-        const pos1 = gState.ctm.applyPoint(x1, y1);
-        const pos2 = gState.ctm.applyPoint(x2, y2);
-        const pos3 = gState.ctm.applyPoint(x, y);
-        path.curveToRel(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y);
+        path.curveToRel(dx1, dy1, dx2, dy2, dx, dy);
         currentX += dx;
         currentY += dy;
         continue;
       }
 
       if (op === "closepath") {
-        path.close();
+        // Só adiciona Z se o último comando não for já um Z
+        if (path.length() > 0 && !path.parts[path.parts.length - 1]?.endsWith("Z")) {
+          path.close();
+        }
         continue;
       }
 
@@ -878,15 +853,6 @@ function interpret(
       }
 
       if (op === "fill" || op === "eofill" || op === "evenodd") {
-        // Verifica se o path é um retângulo simples para otimização
-        if (isRectanglePath(path)) {
-          const rect = extractRectangle(path, gState);
-          if (rect) {
-            svgOut.elementShapes.push(rect.rect);
-            path = path.reset();
-            continue;
-          }
-        }
         flushPath(path, gState, svgOut, FillOnly);
         path = path.reset();
         continue;
@@ -946,6 +912,8 @@ function interpret(
         const ty = safePopNumber(stack, 0);
         const tx = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.translate(tx, ty);
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -953,17 +921,23 @@ function interpret(
         const sy = safePopNumber(stack, 1);
         const sx = safePopNumber(stack, 1);
         gState.ctm = gState.ctm.scale(sx, sy);
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
       if (op === "rotate") {
         const angle = safePopNumber(stack, 0);
         gState.ctm = gState.ctm.rotate(angle);
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
       if (op === "gsave") {
         gStack.push(cloneGraphic(gState));
+        // const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        // path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -980,11 +954,67 @@ function interpret(
         }
 
         gState = st;
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
       if (op === "arc") {
-        handleArc(stack, gState, svgOut);
+        const ang2 = safePopNumber(stack, 0);
+        const ang1 = safePopNumber(stack, 0);
+        const r = safePopNumber(stack, 0);
+        const y = safePopNumber(stack, 0);
+        const x = safePopNumber(stack, 0);
+
+        const { a, b, c, d } = gState.ctm;
+
+        const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
+        let rx, ry;
+        if (needGroup) {
+          rx = Math.abs(r);
+          ry = Math.abs(r);
+        } else {
+          const scaleX = Math.hypot(a, b) || 1;
+          const scaleY = Math.hypot(c, d) || 1;
+          rx = Math.abs(r * scaleX);
+          ry = Math.abs(r * scaleY);
+        }
+
+        const startRad = ang1 * (Math.PI / 180);
+        const start = { x: x + r * Math.cos(startRad), y: y + r * Math.sin(startRad) };
+        const endRad = ang2 * (Math.PI / 180);
+        const end = { x: x + r * Math.cos(endRad), y: y + r * Math.sin(endRad) };
+
+        const delta = Math.abs(ang2 - ang1);
+        const isFullCircle = Math.abs(delta - 360) < 1e-6 || Math.abs(delta) < 1e-6;
+
+        // Se há um moveTo recente para o centro do arco, substitui pelo ponto inicial correto
+        const lastPart = path.parts[path.parts.length - 1];
+        if (lastPart && lastPart.startsWith("M ")) {
+          // Remove o moveTo anterior e adiciona o correto
+          path.parts.pop();
+        }
+
+        path.moveTo(start.x, start.y);
+
+        if (isFullCircle) {
+          const midRad = (ang1 + 180) % 360;
+          const mid = { x: x + r * Math.cos((midRad * Math.PI) / 180), y: y + r * Math.sin((midRad * Math.PI) / 180) };
+
+          path.ellipseTo(rx, ry, 0, 1, 1, mid.x, mid.y); // First 180°
+          path.ellipseTo(rx, ry, 0, 1, 1, start.x, start.y); // Second 180° close loop
+          path.close(); // Z for fillable circle
+          currentX = end.x;
+          currentY = end.y;
+        } else {
+          const normalizedDelta = (((ang2 - ang1) % 360) + 360) % 360;
+          const largeArc = normalizedDelta > 180 ? 1 : 0;
+          const sweep = normalizedDelta > 0 ? 1 : 0;
+          path.ellipseTo(rx, ry, 0, largeArc, sweep, end.x, end.y); // Single A
+          currentX = end.x;
+          currentY = end.y;
+        }
+
         continue;
       }
 
@@ -1045,13 +1075,14 @@ function interpret(
         if (gState.lastTextPos) {
           const p = gState.ctm.applyPoint(gState.lastTextPos.x, gState.lastTextPos.y);
           svgOut.elementShapes.push(
-            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}">${escaped}</text>`
+            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
           );
         }
-        path = path.reset(); // Limpa path após show
+        path = path.reset();
         gState.lastTextPos = null;
         continue;
       }
+
       if (op === "showpage") {
         continue;
       }
@@ -1103,7 +1134,7 @@ function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elemen
   const allParts = path.parts;
   if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
     let subPath = new PathBuilder();
-    subPath = subPath.reset();
+    subPath.reset();
     for (const part of allParts) {
       if (part.startsWith("M ")) {
         if (subPath.length() > 0) {

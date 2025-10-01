@@ -18,13 +18,13 @@ fill
 
 % --- Círculo ---
 newpath
-200 200 40 0 360 arc
+90 150 40 0 360 arc
 stroke
 
 % --- Elipse (via scale + arc) ---
 gsave
 300 200 translate
-80 40 scale
+30 10 scale
 0 0 1 0 360 arc
 stroke
 grestore
@@ -73,6 +73,7 @@ fill
 newpath
 250 50 moveto
 350 150 lineto
+.95 .83 .82 setrgbcolor
 stroke
 
 % --- Transformações ---
@@ -114,23 +115,62 @@ grestore
   end
 } def
 
-100 200 50 50 drawImage
+10 320 50 50 drawImage
 
-% --- Gradiente (simulado com shfill) ---
-<< /ShadingType 2
-   /ColorSpace /DeviceRGB
-   /Coords [0 0 400 0]
-   /Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >>
-   /Extend [true true]
+% --- Gradiente Linear ---
+<<
+  /ShadingType 2
+  /ColorSpace /DeviceRGB
+  /Coords [0 0 200 0]
+  /Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >>
+                                                 % vermelho   azul
 >> shfill
 
-% --- Padrão (pattern fill simplificado) ---
-/Pattern setcolorspace
-% (definição de pattern omitida, apenas chamada)
-pattern setcolor
-newpath
-200 200 50 0 360 arc
-fill
+% --- Gradiente Radial ---
+<<
+  /ShadingType 3
+  /ColorSpace /DeviceRGB
+  /Coords [250 40 0 250 40 30]
+  /Function << /FunctionType 2 /Domain [0 1] /C0 [1 1 0] /C1 [0 0 0] /N 1 >>
+                                                 % amarelo    preto
+>> shfill
+
+% --- Padrão ---
+/pdict 10 dict def
+pdict begin
+  /PatternType 1 def
+  /PaintType 1 def
+  /TilingType 1 def
+  /BBox [0 0 20 20] def
+  /XStep 20 def
+  /YStep 20 def
+  /PaintProc {
+    % Quadrado vermelho
+    newpath
+    0 0 moveto 10 0 lineto 10 10 lineto 0 10 lineto
+    closepath
+    1 0 0 setrgbcolor
+    fill
+
+    % Quadrado verde
+    newpath
+    10 10 moveto 20 10 lineto 20 20 lineto 10 20 lineto
+    closepath
+    0 1 0 setrgbcolor
+    fill
+  } def
+end
+/pat1 pdict makepattern def
+
+gsave
+  pat1 setpattern
+  newpath
+  250 200 moveto
+  250 200 50 0 360 arc
+  closepath
+  fill
+grestore
+
 
 % --- Funções, definição e execução ---
 %% x y w h highlight
@@ -154,7 +194,7 @@ fill
         end
 } def
 
-100 200 150 80 highlight
+59.784 66.176 76.525 16.088 highlight
 
 % --- Fim do arquivo ---
 

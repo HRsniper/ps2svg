@@ -1,28 +1,30 @@
-# Comparação PostScript → SVG
+# Comparação PostScript → SVG (ps2svg)
 
-| Status | Função / Operador PS                               | Exemplo PostScript                                      | Equivalente SVG                             | Exemplo SVG                                                                   |
-| ------ | -------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------- |
-| ✅     | Moveto                                             | `100 200 moveto`                                        | `<path d="M x y">`                          | `<path d="M100 200" />`                                                       |
-| ✅     | Lineto                                             | `300 400 lineto`                                        | `<path d="L x y">`                          | `<path d="M100 200 L300 400" />`                                              |
-| ✅     | Curveto (Bézier C)                                 | `100 200 150 250 200 200 curveto`                       | `<path d="C x1 y1 x2 y2 x y">`              | `<path d="M50 150 C100 200 150 250 200 200" />`                               |
-| ✅     | Closepath                                          | `closepath`                                             | `Z` no `<path>`                             | `<path d="M10 10 L50 10 L50 50 Z" />`                                         |
-| ✅     | Retângulo                                          | `100 100 200 150 rectfill`                              | `<rect>`                                    | `<rect x="100" y="100" width="200" height="150" fill="black" />`              |
-| ✅     | Círculo (arc)                                      | `0 0 50 0 360 arc`                                      | `<circle>`                                  | `<circle cx="0" cy="0" r="50" />`                                             |
-| 🟡     | Elipse                                             | `ellipse` (via transform)                               | `<ellipse>`                                 | `<ellipse cx="100" cy="50" rx="80" ry="40" />`                                |
-| ✅     | RGB                                                | `0.2 0.5 0.8 setrgbcolor`                               | `fill="rgb(r,g,b)"` / `stroke="rgb(r,g,b)"` | `<circle r="50" fill="rgb(51,128,204)" />`                                    |
-| ✅     | Gray                                               | `0.5 setgray`                                           | `fill="gray"` / `opacity`                   | `<rect width="100" height="100" fill="gray" />`                               |
-| ✅     | CMYK                                               | `setcmykcolor`                                          | converter para RGB                          | `fill="rgb(...)"` (após conversão)                                            |
-| ✅     | Espessura de linha                                 | `2 setlinewidth`                                        | `stroke-width="2"`                          | `<line x1="0" y1="0" x2="100" y2="100" stroke="black" stroke-width="2" />`    |
-| ✅     | Linecap                                            | `butt/round/square setlinecap`                          | `stroke-linecap`                            | `<path d="M10 10 L100 10" stroke="black" stroke-linecap="round" />`           |
-| ✅     | Linejoin                                           | `miter/round/bevel setlinejoin`                         | `stroke-linejoin`                           | `<path d="M10 10 L50 10 L50 50" stroke="black" stroke-linejoin="bevel" />`    |
-| ✅     | Texto                                              | `/Helvetica findfont 12 scalefont setfont (Hello) show` | `<text>`                                    | `<text x="10" y="50" font-family="Helvetica" font-size="12">Hello</text>`     |
-| ✅     | Translate                                          | `100 200 translate`                                     | `transform="translate(100 200)"`            | `<g transform="translate(100 200)">...</g>`                                   |
-| ✅     | Rotate                                             | `45 rotate`                                             | `transform="rotate(45)"`                    | `<g transform="rotate(45)">...</g>`                                           |
-| ✅     | Scale                                              | `2 3 scale`                                             | `transform="scale(2 3)"`                    | `<g transform="scale(2 3)">...</g>`                                           |
-| ✅     | Concat / gsave/grestore                            | estado gráfico                                          | `<g>` agrupado com `transform`/estilos      | `<g transform="...">...</g>`                                                  |
-| ❌     | Clipping                                           | `clip` / `eoclip`                                       | `<clipPath>` + `clip-rule`                  | `<clipPath id="c"><circle r="50" /></clipPath><g clip-path="url(#c)">...</g>` |
-| ❌     | Imagem                                             | `image` / `imagemask`                                   | `<image>` / `<mask>`                        | `<image href="img.png" x="0" y="0" width="200" height="200" />`               |
-| ❌     | Gradiente (shfill)                                 | `ShadingType 2/3 shfill`                                | `<linearGradient>` / `<radialGradient>`     | `<rect fill="url(#grad)" ... />`                                              |
-| ❌     | Padrão                                             | `pattern`                                               | `<pattern>`                                 | `<rect fill="url(#pattern)" ... />`                                           |
-| ❌     | Halftone                                           | `setscreen`/`sethalftone`                               | não nativo em SVG                           | simular com `<pattern>` ou rasterizar                                         |
-| 🟡     | Procedimentos ✅ (parsing), ❌ (execução limitada) | `/highlight {...}def`                                   |                                             |                                                                               |
+| Status | Função / Operador PS                      | Exemplo PostScript                | Equivalente SVG                         |
+| ------ | ----------------------------------------- | --------------------------------- | --------------------------------------- |
+| ✅     | Moveto (`moveto`)                         | `100 200 moveto`                  | `<path d="M x y">`                      |
+| ✅     | Lineto (`lineto`)                         | `300 400 lineto`                  | `<path d="L x y">`                      |
+| ✅     | Curveto (`curveto`)                       | `100 200 150 250 200 200 curveto` | `<path d="C ...">`                      |
+| ✅     | Closepath (`closepath`)                   | `closepath`                       | `Z` no `<path>`                         |
+| ✅     | Retângulo                                 | `200 50 moveto 100 0 rlineto ...` | `<path d="M...Z">`                      |
+| ❌     | Retângulo com (`rectfill` / `rectstroke`) | `100 100 200 150 rectfill`        | `<path d="M...Z">`                      |
+| ✅     | Círculo (`arc` completo 0–360)            | `0 0 50 0 360 arc`                | `<path d="M...A...Z">`                  |
+| ✅     | Arco parcial (`arc`)                      | `0 0 50 0 180 arc`                | `<path d="A ...">`                      |
+| ✅     | Elipse (`ellipse`)                        | `ellipse` (via `scale` e `arc`)   | `<path d="M...A...Z">`                  |
+| ✅     | Espessura de linha (`setlinewidth`)       | `2 setlinewidth`                  | `stroke-width="2"`                      |
+| ✅     | Linecap (`setlinecap`)                    | `butt/round/square setlinecap`    | `stroke-linecap`                        |
+| ✅     | Linejoin (`setlinejoin`)                  | `miter/round/bevel setlinejoin`   | `stroke-linejoin`                       |
+| ✅     | RGB (`setrgbcolor`)                       | `0.2 0.5 0.8 setrgbcolor`         | `stroke/fill="rgb(...)"`                |
+| ✅     | Gray (`setgray`)                          | `0.5 setgray`                     | `stroke/fill="rgb(...)"`                |
+| ✅     | CMYK (`setcmykcolor`)                     | `1 0 1 0 setcmykcolor`            | `stroke/fill="rgb(...)"`                |
+| ✅     | Translate (`translate`)                   | `100 200 translate`               | `transform="translate(...)"`            |
+| ✅     | Rotate (`rotate`)                         | `45 rotate`                       | `transform="rotate(...)"`               |
+| ✅     | Scale (`scale`)                           | `2 3 scale`                       | `transform="scale(...)"`                |
+| 🟡     | (`concat` / `gsave` / `grestore`)         | estado gráfico                    | `<g>` agrupado com `transform`/estilos  |
+| 🟡     | Texto (`show`)                            | `(Hello) show`                    | `<text>`                                |
+| ❌     | Imagem (`image` / `imagemask`)            | `image` / `imagemask`             | `<image>` / `<mask>`                    |
+| ❌     | Clipping (`clip` / `eoclip`)              | `clip` / `eoclip`                 | `<clipPath>`                            |
+| ❌     | Gradiente (`shfill`)                      | `ShadingType 2/3 shfill`          | `<linearGradient>` / `<radialGradient>` |
+| ❌     | Padrão (`pattern`)                        | `pattern`                         | `<pattern>`                             |
+| ❌     | Halftone (`setscreen`/`sethalftone`)      | `setscreen`/`sethalftone`         | não nativo em SVG                       |
+| 🟡     | Procedimentos (`def`)                     | `/highlight {...}def`             | —                                       |

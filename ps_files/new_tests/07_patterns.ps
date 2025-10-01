@@ -1,0 +1,26 @@
+%!PS
+%%Title: 07_patterns.ps
+72 740 moveto (Pattern tests) show
+
+% Define simple tiling pattern (Level 2)
+/MyPatternType1 {
+  % pattern paint proc: draw a small cross
+  newpath
+  0 4 moveto 8 4 lineto
+  4 0 moveto 4 8 lineto
+  1 setlinewidth
+  stroke
+} def
+
+% Pattern dictionary (Level2 pattern machinery)
+<< /Type /Pattern /PatternType 1 /PaintType 1 /TilingType 1
+   /BBox [0 0 8 8] /XStep 8 /YStep 8 /PaintProc MyPatternType1
+>> /MyPat exch def
+
+gsave
+100 500 translate
+/MyPat setpattern
+0 0 200 200 rectfill
+grestore
+
+showpage

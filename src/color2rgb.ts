@@ -81,12 +81,9 @@ function ryb2rgb([r, y, b]: RYBColor) {
   const b_norm = clamp(b, COLOR_CONSTANTS.RYB_MIN_PS, COLOR_CONSTANTS.RYB_MAX_PS);
   // console.log(`ryb(${r_norm}, ${y_norm}, ${b_norm})`);
 
-  const rgb = trilinearInterpolate(RGB_CUBE, r_norm, y_norm, b_norm);
-  // console.log(`rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`);
-  return {
-    toString: () => `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`,
-    toArray: (): RGBColor => rgb
-  };
+  const [rr, gg, bb] = trilinearInterpolate(RGB_CUBE, r_norm, y_norm, b_norm);
+  // console.log(`rgb(${rr}, ${gg}, ${bb})`);
+  return returnObject(rr, gg, bb);
 }
 
 // Conversão CMYK → RGB
@@ -105,10 +102,7 @@ function cmyk2rgb([c, m, y, k]: CMYKColor) {
   const g = Math.round(g_norm * COLOR_CONSTANTS.RGB_MAX);
   const b = Math.round(b_norm * COLOR_CONSTANTS.RGB_MAX);
   // console.log(`rgb(${r}, ${g}, ${b})`);
-  return {
-    toString: () => `rgb(${r}, ${g}, ${b})`,
-    toArray: (): RGBColor => [r, g, b]
-  };
+  return returnObject(r, g, b);
 }
 
 function color2rgb([r, g, b]: RGBColor) {
@@ -121,13 +115,25 @@ function color2rgb([r, g, b]: RGBColor) {
   const gg = Math.round(g_norm * COLOR_CONSTANTS.RGB_MAX);
   const bb = Math.round(b_norm * COLOR_CONSTANTS.RGB_MAX);
   // console.log(`rgb(${rr}, ${gg}, ${bb})`);
+  return returnObject(rr, gg, bb);
+}
+
+function gray2rgb(gray: number) {
+  const g_norm = clamp(gray, COLOR_CONSTANTS.RGB_MIN_PS, COLOR_CONSTANTS.RGB_MAX_PS);
+  const gg = Math.round(g_norm * COLOR_CONSTANTS.RGB_MAX);
+  return returnObject(gg, gg, gg);
+}
+
+function returnObject(r: number, g: number, b: number) {
   return {
-    toString: () => `rgb(${rr}, ${gg}, ${bb})`,
-    toArray: (): RGBColor => [r, g, b]
+    toString: () => `rgb(${r}, ${g}, ${b})`,
+    toArray: (): RGBColor => [r, g, b],
+    toHex: () =>
+      `#${[r, g, b].map((color) => clamp(color, COLOR_CONSTANTS.RGB_MIN, COLOR_CONSTANTS.RGB_MAX).toString(16).padStart(2, "0")).join("")}`
   };
 }
 
-export { ryb2rgb, cmyk2rgb, color2rgb };
+export { color2rgb, ryb2rgb, cmyk2rgb, gray2rgb };
 export type { RGBColor, RYBColor, CMYKColor };
 
 // console.log(color2rgb([0.95, 0.83, 0.82]).toString());

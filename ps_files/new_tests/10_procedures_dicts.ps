@@ -1,0 +1,16 @@
+%!PS
+%%Title: 10_procedures_dicts.ps
+72 740 moveto (Procedures & dicts) show
+
+% create and use a dictionary
+/mydict 10 dict def
+mydict begin
+  /square { dup mul } def
+  5 square = % prints 25 to stdout in many interpreters
+end
+
+% intentional error test (stack underflow) - to check error recovery
+% Uncomment to test error signaling
+% stackunderflow
+
+showpage
