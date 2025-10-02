@@ -593,11 +593,9 @@ function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: 
     const parts = [];
     if (Math.abs(decomp.translate.x) > 1e-6 || Math.abs(decomp.translate.y) > 1e-6)
       parts.push(`translate(${numFmt(decomp.translate.x)} ${numFmt(decomp.translate.y)})`);
+    if (Math.abs(decomp.rotate) > 1e-6) parts.push(`rotate(${numFmt(decomp.rotate)})`);
     if (Math.abs(decomp.scale.x - 1) > 1e-6 || Math.abs(decomp.scale.y - 1) > 1e-6)
       parts.push(`scale(${numFmt(decomp.scale.x)} ${numFmt(decomp.scale.y)})`);
-    if (Math.abs(decomp.rotate) > 1e-6) parts.push(`rotate(${numFmt(decomp.rotate)})`);
-    if (Math.abs(decomp.skew.x) > 1e-6) parts.push(`skewX(${numFmt(decomp.skew.x)})`);
-    if (Math.abs(decomp.skew.y) > 1e-6) parts.push(`skewY(${numFmt(decomp.skew.y)})`);
     transformStr = parts.join(" ");
   }
 
