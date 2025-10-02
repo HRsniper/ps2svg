@@ -1124,7 +1124,7 @@ function interpret(
 
       if (op === "image" || op === "imagemask") {
         svgOut.elementShapes.push(
-          `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="10" y="-320" width="50" height="50" href="${DEFAULT_IMAGE}" />`
+          `<!-- image/imagemask not implemented -->\n<image transform="scale(1 -1)" x="10" y="-320" width="50" height="50" href="${DEFAULT_IMAGE}" />`
         );
         continue;
       }
@@ -1168,7 +1168,7 @@ function interpret(
         if (gState.lastTextPos) {
           const p = gState.ctm.applyPoint(gState.lastTextPos.x, gState.lastTextPos.y);
           svgOut.elementShapes.push(
-            `<text transform="scale(1,-1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
+            `<text transform="scale(1 -1)" x="${numFmt(p.x)}" y="${numFmt(-p.y)}" font-family="${gState.font}" font-size="${gState.fontSize}" fill="${gState.fill ?? "black"}" stroke="none">${escaped}</text>`
           );
         }
         path = path.reset();
@@ -1194,14 +1194,12 @@ function interpret(
             const y1 = Math.min(coords[1], coords[3]);
             const x2 = Math.max(coords[0], coords[2]);
             const y2 = Math.max(coords[1], coords[3]);
-            const width = x2 - x1 || 100; // fallback se largura zero
-            const height = y2 - y1 || 40; // fallback se altura zero
 
             svgOut.defs.push(
-              `<defs>\n<linearGradient id="${gradId}" x1="${numFmt(coords[0])}%" y1="${numFmt(coords[1])}%" x2="${numFmt(coords[2])}%" y2="${numFmt(coords[3])}%">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</linearGradient>\n</defs>`
+              `<linearGradient id="${gradId}" x1="${numFmt(coords[0])}%" y1="${numFmt(coords[1])}%" x2="${numFmt(coords[2])}%" y2="${numFmt(coords[3])}%">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</linearGradient>`
             );
 
-            const d = `M ${numFmt(x1)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(height)} L ${numFmt(x1)} ${numFmt(height)} Z`;
+            const d = `M ${numFmt(x1)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y2)} L ${numFmt(x1)} ${numFmt(y2)} Z`;
 
             svgOut.elementShapes.push(emitSVGPath(d, gState, FillOnly, gradId));
             path = path.reset();
@@ -1219,7 +1217,7 @@ function interpret(
             const fy = coords[1]; // y0
 
             svgOut.defs.push(
-              `<defs>\n<radialGradient id="${gradId}">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</radialGradient>\n</defs>`
+              `<radialGradient id="${gradId}">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</radialGradient>`
             );
 
             const d = `M ${numFmt(cx + r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx - r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx + r)} ${numFmt(cy)} Z`;
@@ -1307,10 +1305,10 @@ function convertPostscriptToSVG(psText: string): string {
 
   interpret(tokens, svgOut, bBox ?? undefined);
 
-  const defs = svgOut.defs.join("\n");
+  const defs = svgOut.defs.length > 0 ? `<defs>\n${svgOut.defs.join("\n")}\n</defs>` : "";
   const shapes = svgOut.elementShapes.join("\n");
   const texts = svgOut.elementTexts.join("\n");
-  const body = `<g transform="translate(0, ${height}) scale(1,-1)">\n${shapes}\n</g>\n${texts}`;
+  const body = `<g transform="translate(0 ${height}) scale(1 -1)">\n${shapes}\n${texts}</g>`;
   const svg = `<?xml version="1.0" encoding="utf-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" ${viewBoxAttr}>\n${defs}\n${body}\n</svg>`;
   return svg;
 }
