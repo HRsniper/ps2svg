@@ -252,6 +252,7 @@ interface GraphicState {
   clipStack: string[];
   dash?: string | null;
   lastTextPos: { x: number; y: number } | null;
+  pattern: string | null;
 }
 
 type PostscriptValue = any;
@@ -540,7 +541,8 @@ const DEFAULT_GRAPHIC_STATE: GraphicState = {
   fontSize: 12,
   clipStack: [],
   dash: null,
-  lastTextPos: null
+  lastTextPos: null,
+  pattern: null
 };
 
 function cloneGraphic(s: GraphicState): GraphicState {
@@ -555,7 +557,8 @@ function cloneGraphic(s: GraphicState): GraphicState {
     fontSize: s.fontSize ?? 12,
     clipStack: [...s.clipStack],
     dash: s.dash ?? null,
-    lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null
+    lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null,
+    pattern: s.pattern ?? null
   };
 }
 
@@ -1226,6 +1229,31 @@ function interpret(
           }
         } else {
           svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
+        }
+        continue;
+      }
+
+      if (op === "makepattern") {
+        const dict = stack.pop();
+        // Cria objeto de padrão com ID único
+        console.log("makepattern", dict);
+
+        const patternId = `pattern${clipIdCounter++}`;
+        stack.push({
+          type: "pattern",
+          id: patternId,
+          dict: dict
+        });
+        continue;
+      }
+
+      if (op === "setpattern") {
+        const pattern = stack.pop();
+        console.log("setpattern", pattern);
+        if (pattern && pattern.type === "pattern") {
+          // Armazena padrão no estado gráfico
+          gState.fill = `url(#${pattern.id})`;
+          gState.pattern = pattern;
         }
         continue;
       }
