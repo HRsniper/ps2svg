@@ -1184,37 +1184,36 @@ function interpret(
         const shading = stack.pop();
 
         if (shading && typeof shading === "object") {
-          if (shading?.ShadingType === 2) {
-            const coords = shading?.Coords;
-            const c0 = color2rgb(shading?.Function?.C0 || [1, 0, 0]).toString();
-            const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 1]).toString();
-            const gradId = `grad${clipIdCounter++}`;
+          const gradId = `grad${clipIdCounter++}`;
 
-            const x1 = Math.min(coords[0], coords[2]);
-            const y1 = Math.min(coords[1], coords[3]);
-            const x2 = Math.max(coords[0], coords[2]);
-            const y2 = Math.max(coords[1], coords[3]);
+          if (shading?.ShadingType === 2) {
+            // Gradiente linear
+            const coords = shading?.Coords;
+            const c0 = color2rgb(shading?.Function?.C0 || [1, 1, 1]).toString();
+            const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 0]).toString();
+
+            const [x1, y1, x2, y2] = coords;
 
             svgOut.defs.push(
-              `<linearGradient id="${gradId}" x1="${numFmt(coords[0])}%" y1="${numFmt(coords[1])}%" x2="${numFmt(coords[2])}%" y2="${numFmt(coords[3])}%">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</linearGradient>`
+              `<linearGradient id="${gradId}" x1="${numFmt(x1)}%" y1="${numFmt(y1)}%" x2="${numFmt(x2)}%" y2="${numFmt(y2)}%">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</linearGradient>`
             );
 
-            const d = `M ${numFmt(x1)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y2)} L ${numFmt(x1)} ${numFmt(y2)} Z`;
+            // Criar retângulo que preencha a área do gradiente
+            const minX = Math.min(x1, x2);
+            const minY = Math.min(y1, y2);
+            const width = Math.abs(x2 - x1);
+            const height = Math.abs(y2 - y1);
 
+            const d = `M ${minX} ${minY} L ${minX + width} ${minY} L ${minX + width} ${minY + height} L ${minX} ${minY + height} Z`;
             svgOut.elementShapes.push(emitSVGPath(d, gState, FillOnly, gradId));
             path = path.reset();
           } else if (shading?.ShadingType === 3) {
-            // Gradiente radial: [x0 y0 r0 x1 y1 r1]
+            // Gradiente radial
             const coords = shading?.Coords;
-            const c0 = color2rgb(shading?.Function?.C0 || [1, 1, 0]).toString();
+            const c0 = color2rgb(shading?.Function?.C0 || [1, 1, 1]).toString();
             const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 0]).toString();
-            const gradId = `grad${clipIdCounter++}`;
 
-            const cx = coords[3]; // x1
-            const cy = coords[4]; // y1
-            const r = coords[5]; // r1
-            const fx = coords[0]; // x0
-            const fy = coords[1]; // y0
+            const [fx, fy, fr, cx, cy, r] = coords;
 
             svgOut.defs.push(
               `<radialGradient id="${gradId}">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</radialGradient>`
