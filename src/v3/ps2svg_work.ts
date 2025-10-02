@@ -253,6 +253,7 @@ interface GraphicState {
   dash?: string | null;
   lastTextPos: { x: number; y: number } | null;
   pattern: string | null;
+  patternDict: PostscriptDict | null;
 }
 
 type PostscriptValue = any;
@@ -542,7 +543,8 @@ const DEFAULT_GRAPHIC_STATE: GraphicState = {
   clipStack: [],
   dash: null,
   lastTextPos: null,
-  pattern: null
+  pattern: null,
+  patternDict: null
 };
 
 function cloneGraphic(s: GraphicState): GraphicState {
@@ -558,7 +560,8 @@ function cloneGraphic(s: GraphicState): GraphicState {
     clipStack: [...s.clipStack],
     dash: s.dash ?? null,
     lastTextPos: s.lastTextPos ? { ...s.lastTextPos } : null,
-    pattern: s.pattern ?? null
+    pattern: s.pattern ?? null,
+    patternDict: s.patternDict ? { ...s.patternDict } : null
   };
 }
 
@@ -580,7 +583,7 @@ function isIdentityMatrix(m: Matrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, gradId?: string): string {
+function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, fillId?: string): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
   // Use Matrix.decompose pra transform legível
@@ -603,8 +606,8 @@ function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: 
 
   const pathAttrs = [`d="${d}"`];
 
-  if (gradId) {
-    pathAttrs.push(`fill="url(#${gradId})"`);
+  if (fillId) {
+    pathAttrs.push(`fill="url(#${fillId})"`);
   } else {
     // Fill sempre explícito
     pathAttrs.push(`fill="${fillColor}"`);
@@ -1238,12 +1241,45 @@ function interpret(
         // Cria objeto de padrão com ID único
         console.log("makepattern", dict);
 
-        const patternId = `pattern${clipIdCounter++}`;
-        stack.push({
-          type: "pattern",
-          id: patternId,
-          dict: dict
-        });
+        if (dict && typeof dict === "object") {
+          const patternId = `pattern${clipIdCounter++}`;
+
+          const patternType = dict.PatternType || 1;
+          const paintType = dict.PaintType || 1;
+          const tilingType = dict.TilingType || 1;
+          const bbox = dict.BBox || [0, 0, 20, 20];
+          const xStep = dict.XStep || 20;
+          const yStep = dict.YStep || 20;
+
+          // Processar PaintProc - é um procedimento PostScript que precisamos interpretar
+          let paintProcPath = "";
+          if (dict.PaintProc && typeof dict.PaintProc === "object" && dict.PaintProc.body) {
+            // Interpretar o procedimento PaintProc como comandos PostScript
+            const paintProcTokens = dict.PaintProc.body as Token[];
+            const paintProcOut = { defs: [], elementShapes: [], elementTexts: [] };
+
+            // Criar um estado gráfico simplificado para o padrão
+            const patternGState = { ...DEFAULT_GRAPHIC_STATE };
+
+            // Interpretar o procedimento PaintProc
+            interpret(paintProcTokens, paintProcOut);
+
+            // Extrair apenas os elementos de path do resultado
+            paintProcPath = paintProcOut.elementShapes.filter((shape: string) => shape.startsWith("<path")).join("\n");
+
+            // Criar o padrão SVG
+            const patternDefs = `<pattern id="${patternId}" x="${bbox[0]}" y="${bbox[1]}" width="${xStep}" height="${yStep}" patternUnits="userSpaceOnUse">\n${paintProcPath}\n</pattern>`;
+
+            svgOut.defs.push(patternDefs);
+
+            // Armazenar o padrão na pilha
+            stack.push({
+              type: "pattern",
+              id: patternId,
+              dict: dict
+            });
+          }
+        }
         continue;
       }
 
@@ -1253,7 +1289,10 @@ function interpret(
         if (pattern && pattern.type === "pattern") {
           // Armazena padrão no estado gráfico
           gState.fill = `url(#${pattern.id})`;
-          gState.pattern = pattern;
+          gState.pattern = pattern.id;
+          gState.patternDict = pattern.dict;
+        } else {
+          gState.fill = "none"; // Fallback
         }
         continue;
       }
