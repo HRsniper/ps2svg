@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import { cmyk2rgb, color2rgb, gray2rgb } from "../color2rgb.js";
-import { fileInputName, fileOutputName } from "../cli.js";
+// import { fileInputName, fileOutputName } from "../cli.js";
 
 console.time("Execution time");
 
@@ -652,10 +652,10 @@ function escapeXML(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
-  const rad = (deg * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
+// function anglePoint(cx: number, cy: number, r: number, deg: number): { x: number; y: number } {
+//   const rad = (deg * Math.PI) / 180;
+//   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+// }
 
 function safePopNumber(stack: any[], def = 0): number {
   const v = stack.pop();
@@ -1033,8 +1033,6 @@ function interpret(
 
       if (op === "gsave") {
         gStack.push(cloneGraphic(gState));
-        // const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
-        // path.setTransformMode(needGroup, needGroup ? undefined : gState.ctm);
         continue;
       }
 
@@ -1202,7 +1200,6 @@ function interpret(
               `<linearGradient id="${gradId}" x1="${numFmt(x1)}%" y1="${numFmt(y1)}%" x2="${numFmt(x2)}%" y2="${numFmt(y2)}%">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</linearGradient>`
             );
 
-            // Criar retângulo que preencha a área do gradiente
             const minX = Math.min(x1, x2);
             const minY = Math.min(y1, y2);
             const width = Math.abs(x2 - x1);
@@ -1236,8 +1233,6 @@ function interpret(
 
       if (op === "makepattern") {
         const dict = stack.pop();
-        // Cria objeto de padrão com ID único
-        // console.log("makepattern", dict);
 
         if (dict && typeof dict === "object") {
           const patternId = `pattern${idCounter++}`;
@@ -1252,11 +1247,10 @@ function interpret(
           // Processar PaintProc - é um procedimento PostScript que precisamos interpretar
           let paintProcPath = "";
           if (dict.PaintProc && typeof dict.PaintProc === "object" && dict.PaintProc.body) {
-            // Interpretar o procedimento PaintProc como comandos PostScript
+            // Interpretar o procedimento PaintProc
             const paintProcTokens = dict.PaintProc.body as Token[];
             const paintProcOut = { defs: [], elementShapes: [], elementTexts: [] };
 
-            // Criar um estado gráfico simplificado para o padrão
             const patternGState = { ...DEFAULT_GRAPHIC_STATE };
 
             // Interpretar o procedimento PaintProc
@@ -1270,7 +1264,6 @@ function interpret(
 
             svgOut.defs.push(patternDefs);
 
-            // Armazenar o padrão na pilha
             stack.push({
               type: "pattern",
               id: patternId,
@@ -1283,9 +1276,8 @@ function interpret(
 
       if (op === "setpattern") {
         const pattern = stack.pop();
-        // console.log("setpattern", pattern);
+
         if (pattern && pattern.type === "pattern") {
-          // Armazena padrão no estado gráfico
           gState.fill = `url(#${pattern.id})`;
           gState.pattern = pattern.id;
           gState.patternDict = pattern.dict;
@@ -1312,39 +1304,6 @@ function interpret(
   if (path.length() > 0) {
     flushPath(path, gState, svgOut, StrokeOnly);
   }
-}
-
-// (not implemented) Splits multi-subpath paths into single subpaths
-function megaPathSplit(path: PathBuilder, gState: GraphicState, svgOut: { elementShapes: string[] }) {
-  // colocado no if (path.length() > 0) { ... }
-  // Se for multi-subpath acumulado, split manualmente em paths isolados (fallback)
-  const allParts = path.parts;
-  if (allParts.length > 2 && allParts.every((p) => p.startsWith("M ") || p.startsWith("L "))) {
-    let subPath = new PathBuilder();
-    subPath.reset();
-    for (const part of allParts) {
-      if (part.startsWith("M ")) {
-        if (subPath.length() > 0) {
-          flushPath(subPath, gState, svgOut, StrokeOnly);
-          subPath = subPath.reset();
-        }
-        subPath.parts.push(part);
-      } else if (part.startsWith("L ")) {
-        subPath.parts.push(part);
-        if (subPath.length() === 2) {
-          // Emit simple M L
-          flushPath(subPath, gState, svgOut, StrokeOnly);
-          subPath = subPath.reset();
-        }
-      }
-    }
-    if (subPath.length() > 0) flushPath(subPath, gState, svgOut, StrokeOnly);
-  } else {
-    // Legacy: Emit como um
-    const d = path.toPath();
-    svgOut.elementShapes.push(emitSVGPath(d, gState, StrokeOnly));
-  }
-  path = path.reset();
 }
 
 function extractBoundingBox(ps: string) {
@@ -1388,7 +1347,7 @@ function convertSvgToFile(inPath: string, outPath: string) {
   const svg = convertPostscriptToSVG(file);
   fs.writeFileSync(`${outPath}.svg`, svg, "utf8");
 }
-convertSvgToFile(fileInputName, fileOutputName);
+// convertSvgToFile(fileInputName, fileOutputName);
 
 console.timeEnd("Execution time");
 
