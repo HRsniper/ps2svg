@@ -962,6 +962,8 @@ function interpret(
         const rgb = color2rgb([r, g, b]).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
+        gState.pattern = null;
+        gState.patternDict = null;
         continue;
       }
 
@@ -970,6 +972,8 @@ function interpret(
         const rgb = gray2rgb(v).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
+        gState.pattern = null;
+        gState.patternDict = null;
         continue;
       }
 
@@ -981,6 +985,8 @@ function interpret(
         const rgb = cmyk2rgb([c, m, y, k]).toString();
         gState.fill = rgb;
         gState.stroke = rgb;
+        gState.pattern = null;
+        gState.patternDict = null;
         continue;
       }
 
@@ -1253,8 +1259,17 @@ function interpret(
 
             const patternGState = { ...DEFAULT_GRAPHIC_STATE };
 
-            // Interpretar o procedimento PaintProc
-            interpret(paintProcTokens, paintProcOut);
+            // Salva estado global (deep copy)
+            const savedDictStack = dictStack.map((d) => ({ ...d })); // Deep copy dos dicts
+
+            try {
+              // Interpretar o procedimento PaintProc
+              interpret(paintProcTokens, paintProcOut);
+            } finally {
+              // Restaura estado global
+              dictStack.length = 0;
+              dictStack.push(...savedDictStack);
+            }
 
             // Extrair apenas os elementos de path do resultado
             paintProcPath = paintProcOut.elementShapes.filter((shape: string) => shape.startsWith("<path")).join("\n");
@@ -1294,6 +1309,8 @@ function interpret(
       }
 
       if (op === "matrix") {
+        // TODO: matrix operator - cria matriz identidade [1 0 0 1 0 0] na stack
+        // Não implementado pois não é usado no conjunto de testes atual
         continue;
       }
 
