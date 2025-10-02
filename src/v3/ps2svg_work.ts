@@ -1120,7 +1120,7 @@ function interpret(
 
       if (op === "image" || op === "imagemask") {
         svgOut.elementShapes.push(
-          `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="50" y="-50" width="50" height="50" href="${DEFAULT_IMAGE}" />`
+          `<!-- image/imagemask not implemented -->\n<image transform="scale(1,-1)" x="10" y="-320" width="50" height="50" href="${DEFAULT_IMAGE}" />`
         );
         continue;
       }
@@ -1185,17 +1185,22 @@ function interpret(
             const c0 = color2rgb(shading?.Function?.C0 || [1, 0, 0]).toString();
             const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 1]).toString();
             const gradId = `grad${clipIdCounter++}`;
+
+            const x1 = Math.min(coords[0], coords[2]);
+            const y1 = Math.min(coords[1], coords[3]);
+            const x2 = Math.max(coords[0], coords[2]);
+            const y2 = Math.max(coords[1], coords[3]);
+            const width = x2 - x1 || 100; // fallback se largura zero
+            const height = y2 - y1 || 40; // fallback se altura zero
+
             svgOut.defs.push(
-              `<linearGradient id="${gradId}" x1="${numFmt(coords[0])}" y1="${numFmt(coords[1])}" x2="${numFmt(coords[2])}" y2="${numFmt(coords[3])}">
-            <stop offset="0" stop-color="${c0}" />
-            <stop offset="1" stop-color="${c1}" />
-          </linearGradient>`
+              `<defs>\n<linearGradient id="${gradId}" x1="${numFmt(coords[0])}%" y1="${numFmt(coords[1])}%" x2="${numFmt(coords[2])}%" y2="${numFmt(coords[3])}%">\n<stop offset="0" stop-color="${c0}" />\n<stop offset="1" stop-color="${c1}" />\n</linearGradient>\n</defs>`
             );
-            if (path.length() > 0) {
-              const d = path.toPath();
-              svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" />`);
-              path = path.reset();
-            }
+
+            const d = `M ${numFmt(x1)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(height)} L ${numFmt(x1)} ${numFmt(height)} Z`;
+
+            svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
+            path = path.reset();
           } else if (shading?.ShadingType === 3) {
             // Gradiente radial: [x0 y0 r0 x1 y1 r1]
             const coords = shading?.Coords;
@@ -1203,7 +1208,6 @@ function interpret(
             const c1 = color2rgb(shading?.Function?.C1 || [0, 0, 0]).toString();
             const gradId = `grad${clipIdCounter++}`;
 
-            // SVG radialGradient: cx, cy, r (círculo externo), fx, fy (foco)
             const cx = coords[3]; // x1
             const cy = coords[4]; // y1
             const r = coords[5]; // r1
@@ -1215,10 +1219,10 @@ function interpret(
             );
 
             const d = `M ${numFmt(cx + r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx - r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx + r)} ${numFmt(cy)} Z`;
-            svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
-          }
 
-          path = path.reset();
+            svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
+            path = path.reset();
+          }
         } else {
           svgOut.elementShapes.push(`<!-- shfill not fully implemented -->`);
         }
