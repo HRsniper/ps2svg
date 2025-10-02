@@ -165,8 +165,38 @@ end
 gsave
   pat1 setpattern
   newpath
-  250 200 moveto
   250 200 50 0 360 arc
+  closepath
+  fill
+grestore
+
+% Define o padrão level 3
+<<
+  /PatternType 1
+  /PaintType 1
+  /TilingType 1
+  /BBox [0 0 60 60]
+  /XStep 60
+  /YStep 60
+  /PaintProc {
+    newpath
+    0 0 moveto 30 0 rlineto 0 30 rlineto -30 0 rlineto
+    0.5 0.5 0 setrgbcolor
+    closepath
+    fill
+
+    newpath
+    30 30 moveto 30 0 rlineto 0 30 rlineto -30 0 rlineto
+    0.5 0 0.5 setrgbcolor
+    closepath
+    fill
+  }
+>> matrix makepattern /MyPattern exch def
+
+gsave
+  MyPattern setpattern
+  newpath
+  150 200 40 0 360 arc
   closepath
   fill
 grestore

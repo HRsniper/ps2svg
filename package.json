@@ -1,6 +1,6 @@
 {
   "name": "ps2svg",
-  "version": "2.2.9",
+  "version": "2.3.2",
   "description": "Convert PostScript to SVG",
   "main": "./dist/ps2svg.js",
   "type": "module",
@@ -22,8 +22,7 @@
     "start": "node ./dist/ps2svg.js",
     "prettier": "npx prettier --write .",
     "eslint": "npx eslint ./src --fix",
-    "prepublishOnly": "npm run prestart",
-    "t": "npm run build && node ./dist/ps2svg.js ps_files/example_full test"
+    "prepublishOnly": "npm run prestart"
   },
   "engines": {
     "node": ">=24.8.0"

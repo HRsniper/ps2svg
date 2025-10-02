@@ -1,19 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <g transform="translate(0, 400) scale(1,-1)">
-
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <g transform="translate(0 400) scale(1 -1)">
     <!-- Linha reta -->
     <path d="M 50 50 L 150 150" fill="none" stroke="black" stroke-width="1" />
 
     <!-- Retângulo -->
     <path d="M 200 50 l 100 0 l 0 50 l -100 0 Z" fill="black" stroke="none" />
-    <!-- <path d="M 200 50 L 300 50 L 300 100 L 200 100 Z" fill="black" stroke="none" /> -->
 
     <!-- Círculo -->
-    <path d="M 90 150 A 40 40 0 1 0 160 200 A 40 40 0 1 0 90 150 Z" fill="none" stroke="black" stroke-width="1" />
+    <path d="M 130 150 A 40 40 0 1 1 50 150 A 40 40 0 1 1 130 150 Z" fill="none" stroke="black" stroke-width="1" />
 
     <!-- Elipse -->
     <g transform="translate(300 200) scale(30 10)">
-      <path d="M 1 0 A 1 1 0 1 0 -1 0 A 1 1 0 1 0 1 0 Z" fill="none" stroke="black" stroke-width="1" />
+      <path d="M 1 0 A 1 1 0 1 1 -1 0 A 1 1 0 1 1 1 0 Z" fill="none" stroke="black" stroke-width="1" />
     </g>
 
     <!-- Polígono -->
@@ -27,54 +26,61 @@
       stroke="none">Olá Mundo</text>
 
     <!-- Cor RGB -->
-    <path d="M 280 300 A 30 30 0 1 0 220 300 A 30 30 0 1 0 280 300 Z" fill="rgb(51,153,204)" stroke="none" />
+    <path d="M 280 300 A 30 30 0 1 1 220 300 A 30 30 0 1 1 280 300 Z" fill="rgb(51, 153, 204)" stroke="none" />
     <!-- Cor Gray -->
-    <path d="M 370 300 A 20 20 0 1 0 330 300 A 20 20 0 1 0 370 300 Z" fill="rgb(128,128,128)" stroke="none" />
+    <path d="M 370 300 A 20 20 0 1 1 330 300 A 20 20 0 1 1 370 300 Z" fill="rgb(128, 128, 128)" stroke="none" />
     <!-- Cor CMYK -->
-    <path d="M 320 350 A 20 20 0 1 0 280 350 A 20 20 0 1 0 320 350 Z" fill="rgb(255,128,128)" stroke="none" />
+    <path d="M 320 350 A 20 20 0 1 1 280 350 A 20 20 0 1 1 320 350 Z" fill="rgb(255, 128, 128)" stroke="none" />
 
     <!-- Linha com estilo -->
     <path d="M 250 50 L 350 150" fill="none" stroke="rgb(242, 212, 209)" stroke-width="5" stroke-dasharray="4 2" />
 
     <!-- Transformações -->
     <g transform="translate(100 100) rotate(45) scale(2 1)">
-      <path d="M 30 0 A 30 30 0 1 0 -30 0 A 30 30 0 1 0 30 0 Z" fill="none" stroke="black" stroke-width="1" />
+      <path d="M 30 0 A 30 30 0 1 1 -30 0 A 30 30 0 1 1 30 0 Z" fill="none" stroke="black" stroke-width="1" />
     </g>
 
     <!-- Imagem -->
-    <image transform="scale(1,-1)" x="10" y="-320" width="50" height="50"
+    <image transform="scale(1 -1)" x="10" y="-320" width="50" height="50"
       href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAYklEQVR4AYSP0QkAIQxDY1fSmXQmncnO1OsT7ufgUAyE5FnVJEWtNXrvMeeMvXe8C28ZKgG5u8YYaq0d4cmMEihpITwZJZB9T1ACAaP7FTmmrLVKjiz54CM8GR2/yPx/X4EHAAD//2JOIXcAAAAGSURBVAMAAcFQEU64jdoAAAAASUVORK5CYII=" />
 
     <!-- Gradiente Linear -->
     <defs>
-      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="red" />
-        <stop offset="100%" stop-color="blue" />
+      <linearGradient id="grad0" x1="0%" y1="0%" x2="200%" y2="30%">
+        <stop offset="0" stop-color="rgb(255, 0, 0)" />
+        <stop offset="1" stop-color="rgb(0, 0, 255)" />
       </linearGradient>
     </defs>
-    <path d="M 0 0 L 200 0 L 200 40 L 0 40 Z" fill="url(#grad1)" stroke="none" />
+    <path d="M 0 0 L 200 0 L 200 30 L 0 30 Z" fill="url(#grad0)" stroke="none" />
 
     <!-- Gradiente Radial -->
     <defs>
-      <radialGradient id="grad2">
-        <stop offset="0%" stop-color="yellow" />
-        <stop offset="100%" stop-color="black" />
+      <radialGradient id="grad1">
+        <stop offset="0" stop-color="rgb(255, 255, 0)" />
+        <stop offset="1" stop-color="rgb(0, 0, 0)" />
       </radialGradient>
     </defs>
-    <path d="M 280 40 A 30 30 0 1 0 220 40 A 30 30 0 1 0 280 40 Z" fill="url(#grad2)" />
+    <path d="M 280 40 A 30 30 0 1 1 220 40 A 30 30 0 1 1 280 40 Z" fill="url(#grad1)" stroke="none" />
 
-    <!-- Padrão -->
+    <!-- Padrão l2-->
     <defs>
-      <pattern id="pattern1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-        <path d="M 0 0 L 10 0 L 10 10 L 0 10 Z" fill="red" stroke="none" />
-        <path d="M 10 10 L 20 10 L 20 20 L 10 20 Z" fill="green" stroke="none" />
+      <pattern id="pattern2" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+        <path d="M 0 0 L 10 0 L 10 10 L 0 10 Z" fill="rgb(255, 0, 0)" stroke="none" />
+        <path d="M 10 10 L 20 10 L 20 20 L 10 20 Z" fill="rgb(0, 255, 0)" stroke="none" />
       </pattern>
     </defs>
-    <path d="M 250 200 A 50 50 0 1 0 150 200 A 50 50 0 1 0 250 200 Z" fill="url(#pattern1)" stroke="none" />
+    <path d="M 300 200 A 50 50 0 1 1 200 200 A 50 50 0 1 1 300 200 Z" fill="url(#pattern2)" stroke="none" />
+    <defs>
+
+      <!-- Padrão l3 -->
+      <pattern id="pattern3" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+        <path d="M 0 0 l 30 0 l 0 30 l -30 0 Z" fill="rgb(128, 128, 0)" stroke="none" />
+        <path d="M 30 30 l 30 0 l 0 30 l -30 0 Z" fill="rgb(128, 0, 128)" stroke="none" />
+      </pattern>
+    </defs>
+    <path d="M 190 200 A 40 40 0 1 1 110 200 A 40 40 0 1 1 190 200 Z" fill="url(#pattern3)" stroke="none" />
 
     <!-- Funções def -->
-    <path d="M 59.784 66.176 L 59.784 82.264 L 136.309 82.264 L 136.309 66.176 L 59.784 66.176 Z"
-      fill="rgb(242, 212, 209)" stroke="none" />
-
+    <path d="M 59.784 66.176 l 0 16.088 l 76.525 0 l 0 -16.088 l -76.525 0 Z" fill="rgb(242, 212, 209)" stroke="none" />
   </g>
 </svg>

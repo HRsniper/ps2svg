@@ -24,7 +24,7 @@
 | 🟡     | Texto (`show`)                            | `(Hello) show`                    | `<text>`                                |
 | ❌     | Imagem (`image` / `imagemask`)            | `image` / `imagemask`             | `<image>` / `<mask>`                    |
 | ❌     | Clipping (`clip` / `eoclip`)              | `clip` / `eoclip`                 | `<clipPath>`                            |
-| ❌     | Gradiente (`shfill`)                      | `ShadingType 2/3 shfill`          | `<linearGradient>` / `<radialGradient>` |
-| ❌     | Padrão (`pattern`)                        | `pattern`                         | `<pattern>`                             |
+| 🟡     | Gradiente (`shfill`)                      | `ShadingType 2/3 shfill`          | `<linearGradient>` / `<radialGradient>` |
+| 🟡     | Padrão (`pattern`)                        | `pattern`                         | `<pattern>`                             |
 | ❌     | Halftone (`setscreen`/`sethalftone`)      | `setscreen`/`sethalftone`         | não nativo em SVG                       |
 | 🟡     | Procedimentos (`def`)                     | `/highlight {...}def`             | —                                       |

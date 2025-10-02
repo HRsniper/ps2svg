@@ -739,7 +739,7 @@ function interpret(
   let path = new PathBuilder();
   let currentX = 0;
   let currentY = 0;
-  let clipIdCounter = 0;
+  let idCounter = 0;
 
   // Inicializa path com modo correto
   const needGroup = !isIdentityMatrix(gState.ctm) || gState.clipStack.length > 0;
@@ -1048,7 +1048,7 @@ function interpret(
         if (st.clipStack.length > gState.clipStack.length) {
           for (let j = gState.clipStack.length; j < st.clipStack.length; j++) {
             const clipPath = st.clipStack[j];
-            svgOut.defs.push(`<clipPath id="clip${clipIdCounter++}"><path d="${clipPath}" /></clipPath>`);
+            svgOut.defs.push(`<clipPath id="clip${idCounter++}"><path d="${clipPath}" /></clipPath>`);
           }
         }
 
@@ -1120,7 +1120,7 @@ function interpret(
       if (op === "clip") {
         if (path.length() > 0) {
           const clipPath = path.toPath();
-          const clipId = `clip${clipIdCounter++}`;
+          const clipId = `clip${idCounter++}`;
           svgOut.defs.push(`<clipPath id="${clipId}"><path d="${clipPath}" /></clipPath>`);
           gState.clipStack.push(clipPath);
           path = path.reset();
@@ -1190,7 +1190,7 @@ function interpret(
         const shading = stack.pop();
 
         if (shading && typeof shading === "object") {
-          const gradId = `grad${clipIdCounter++}`;
+          const gradId = `grad${idCounter++}`;
 
           if (shading?.ShadingType === 2) {
             // Gradiente linear
@@ -1239,10 +1239,10 @@ function interpret(
       if (op === "makepattern") {
         const dict = stack.pop();
         // Cria objeto de padrão com ID único
-        console.log("makepattern", dict);
+        // console.log("makepattern", dict);
 
         if (dict && typeof dict === "object") {
-          const patternId = `pattern${clipIdCounter++}`;
+          const patternId = `pattern${idCounter++}`;
 
           const patternType = dict.PatternType || 1;
           const paintType = dict.PaintType || 1;
@@ -1285,7 +1285,7 @@ function interpret(
 
       if (op === "setpattern") {
         const pattern = stack.pop();
-        console.log("setpattern", pattern);
+        // console.log("setpattern", pattern);
         if (pattern && pattern.type === "pattern") {
           // Armazena padrão no estado gráfico
           gState.fill = `url(#${pattern.id})`;
@@ -1293,11 +1293,17 @@ function interpret(
           gState.patternDict = pattern.dict;
         } else {
           gState.fill = "none"; // Fallback
+          gState.pattern = null;
+          gState.patternDict = null;
         }
         continue;
       }
 
       if (op === "setcolorspace") {
+        continue;
+      }
+
+      if (op === "matrix") {
         continue;
       }
 
