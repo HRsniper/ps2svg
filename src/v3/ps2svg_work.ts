@@ -577,7 +577,7 @@ function isIdentityMatrix(m: Matrix): boolean {
   return m.a === 1 && m.b === 0 && m.c === 0 && m.d === 1 && m.e === 0 && m.f === 0;
 }
 
-function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }): string {
+function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: boolean }, gradId?: string): string {
   const needGroup = !isIdentityMatrix(g.ctm) || g.clipStack.length > 0;
 
   // Use Matrix.decompose pra transform legível
@@ -600,8 +600,12 @@ function emitSVGPath(d: string, g: GraphicState, mode: { stroke: boolean; fill: 
 
   const pathAttrs = [`d="${d}"`];
 
-  // Fill sempre explícito
-  pathAttrs.push(`fill="${fillColor}"`);
+  if (gradId) {
+    pathAttrs.push(`fill="url(#${gradId})"`);
+  } else {
+    // Fill sempre explícito
+    pathAttrs.push(`fill="${fillColor}"`);
+  }
 
   // Stroke: só adiciona atributos se stroke tem cor (não é "none")
   if (mode.stroke && strokeColor !== "none") {
@@ -1199,7 +1203,7 @@ function interpret(
 
             const d = `M ${numFmt(x1)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(y1)} L ${numFmt(x2)} ${numFmt(height)} L ${numFmt(x1)} ${numFmt(height)} Z`;
 
-            svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
+            svgOut.elementShapes.push(emitSVGPath(d, gState, FillOnly, gradId));
             path = path.reset();
           } else if (shading?.ShadingType === 3) {
             // Gradiente radial: [x0 y0 r0 x1 y1 r1]
@@ -1220,7 +1224,7 @@ function interpret(
 
             const d = `M ${numFmt(cx + r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx - r)} ${numFmt(cy)} A ${numFmt(r)} ${numFmt(r)} 0 1 1 ${numFmt(cx + r)} ${numFmt(cy)} Z`;
 
-            svgOut.elementShapes.push(`<path d="${d}" fill="url(#${gradId})" stroke="none"/>`);
+            svgOut.elementShapes.push(emitSVGPath(d, gState, FillOnly, gradId));
             path = path.reset();
           }
         } else {
